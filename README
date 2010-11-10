@@ -1,0 +1,8 @@
+An atompub server that supports the message queue/bus model
+
+Usage:
+
+    use AtomMQ;
+    my $dsn = 'dbi:SQLite:dbname=foo.db';
+    my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
+    $server->run;
