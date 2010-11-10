@@ -1,8 +1,38 @@
-An atompub server that supports the message queue/bus model
+An atompub server that supports the message queue/bus model.  Throughout this
+document, I will use the term message when refering to an atom feed entry,
+since the point of this library is to use atompub for messaging purposes.
 
 Usage:
 
+    #!/usr/bin/perl
     use AtomMQ;
     my $dsn = 'dbi:SQLite:dbname=foo.db';
+    # username and password fields are also allowed, in case your db needs them
     my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
     $server->run;
+
+Just drop the above file in your cgi-bin folder on your web server, and you will
+have a shiny new atompub server with a feed titled MyCoolFeed.  To create more
+feeds, just copy that file and change 'MyCoolFeed' to 'MyOtherFeed'.
+
+To publish a message to AtomMQ, make a HTTP POST request:
+    $ curl -d '<entry> <title>allo</title> <content type="xhtml"> <div xmlns="http://www.w3.org/1999/xhtml">an important message</div> </content> </entry> ' http://localhost/cgi-bin/myfeed
+
+Where myfeed is the name of the file you created in cgi-bin.
+
+So how is this different than a regular atompub server?  Just one simple thing.
+A concept of lastid.  So if you just do:
+
+    $ curl http://localhost/cgi-bin/myfeed
+
+you will get all messages since the feed was created. But lets say you are
+running a client that polls the feed and processes messages.  If this client
+dies, you will not want it to process all the messages again.  So clients are
+responsible for maintaing and persisting the id of the last message they
+processed.  This allows a client to requests only messages that came after
+the message with the given id, called the last id.  They can do this by passing
+a Xlastid header:
+
+    $ curl 'Xlastid: 42' http://localhost/cgi-bin/myfeed
+
+That will return only messages that came after the message that had id 42.
