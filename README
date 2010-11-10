@@ -12,7 +12,8 @@ Usage:
     $server->run;
 
 Just drop the above file in your cgi-bin folder on your web server, and you will
-have a shiny new atompub server with a feed titled MyCoolFeed.  To create more
+have a shiny new atompub server with a feed titled MyCoolFeed.  It can also be
+run via mod_perl on apache, but that is more complicated.  To create more
 feeds, just copy that file and change 'MyCoolFeed' to 'MyOtherFeed'.
 
 To publish a message to AtomMQ, make a HTTP POST request:
@@ -30,8 +31,8 @@ A concept of lastid.  So if you just do:
 you will get all messages since the feed was created. But lets say you are
 running a client that polls the feed and processes messages.  If this client
 dies, you will not want it to process all the messages again.  So clients are
-responsible for maintaing and persisting the id of the last message they
-processed.  This allows a client to requests only messages that came after
+responsible for maintaining and persisting the id of the last message they
+processed.  This allows a client to request only messages that came after
 the message with the given id, called the last id.  They can do this by passing
 a Xlastid header:
 
