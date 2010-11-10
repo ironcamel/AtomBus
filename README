@@ -16,7 +16,9 @@ have a shiny new atompub server with a feed titled MyCoolFeed.  To create more
 feeds, just copy that file and change 'MyCoolFeed' to 'MyOtherFeed'.
 
 To publish a message to AtomMQ, make a HTTP POST request:
-    $ curl -d '<entry> <title>allo</title> <content type="xhtml"> <div xmlns="http://www.w3.org/1999/xhtml">an important message</div> </content> </entry> ' http://localhost/cgi-bin/myfeed
+    $ curl -d '<entry> <title>allo</title> <content type="xhtml">
+      <div xmlns="http://www.w3.org/1999/xhtml">an important message</div>
+      </content> </entry>' http://localhost/cgi-bin/myfeed
 
 Where myfeed is the name of the file you created in cgi-bin.
 
