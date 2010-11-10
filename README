@@ -33,6 +33,6 @@ processed.  This allows a client to requests only messages that came after
 the message with the given id, called the last id.  They can do this by passing
 a Xlastid header:
 
-    $ curl 'Xlastid: 42' http://localhost/cgi-bin/myfeed
+    $ curl -H 'Xlastid: 42' http://localhost/cgi-bin/myfeed
 
 That will return only messages that came after the message that had id 42.
