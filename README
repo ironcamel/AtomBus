@@ -1,6 +1,8 @@
 An atompub server that supports the message queue/bus model.  Throughout this
 document, I will use the term message when refering to an atom feed entry,
-since the point of this library is to use atompub for messaging purposes.
+since the point of this module is to use atompub for messaging purposes.
+AtomMQ extends Atompub::Server which extends XML::Atom::Server.  Can you feel
+the love already?
 
 Usage:
 
@@ -33,8 +35,7 @@ running a client that polls the feed and processes messages.  If this client
 dies, you will not want it to process all the messages again.  So clients are
 responsible for maintaining and persisting the id of the last message they
 processed.  This allows a client to request only messages that came after
-the message with the given id, called the last id.  They can do this by passing
-a Xlastid header:
+the message with the given id.  They can do this by passing a Xlastid header:
 
     $ curl -H 'Xlastid: 42' http://localhost/cgi-bin/myfeed
 

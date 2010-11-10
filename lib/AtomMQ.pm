@@ -38,8 +38,8 @@ has dbh => (
 );
 
 my %dispatch = (
-    GET  => \&get_feed,
-    POST => \&new_post,
+    GET  => 'get_feed',
+    POST => 'new_post',
 );
 
 sub handle_request {
