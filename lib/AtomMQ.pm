@@ -113,8 +113,6 @@ sub new_post {
     #return Dumper $dbh->selectall_arrayref("select * from $ENTRY_TABLE");
 }
 
-__END__
-
 # ABSTRACT: An atompub server that supports the message queue/bus model.
 
 =head1 SYNOPSIS
@@ -168,3 +166,7 @@ the message with the given id.  They can do this by passing a Xlastid header:
     $ curl -H 'Xlastid: 42' http://localhost/cgi-bin/mycoolfeed
 
 That will return only messages that came after the message that had id 42.
+
+=cut
+
+1;
