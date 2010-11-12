@@ -145,6 +145,7 @@ run via mod_perl on apache, but that is more complicated.  To create more
 feeds, just copy that file and change 'MyCoolFeed' to 'MyOtherFeed'.
 
 To publish a message to AtomMQ, make a HTTP POST request:
+
     $ curl -d '<entry> <title>allo</title> <content type="xhtml">
       <div xmlns="http://www.w3.org/1999/xhtml" >an important message</div>
       </content> </entry>' http://localhost/cgi-bin/mycoolfeed
