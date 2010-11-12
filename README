@@ -1,8 +1,8 @@
 An atompub server that supports the message queue/bus model.  Throughout this
-document, I will use the term message when refering to an atom feed entry,
-since the point of this module is to use atompub for messaging purposes.
-AtomMQ extends Atompub::Server which extends XML::Atom::Server.  Can you feel
-the love already?
+document, I will use the term message when refering to an atom feed entry, since
+the point of this module is to use atompub for messaging purposes.  AtomMQ
+extends Inoue's Atompub::Server which extends Miyagawa's XML::Atom::Server.  Can
+you feel the love already?
 
 Usage:
 
