@@ -145,6 +145,35 @@ the message with the given id.  They can do this by passing a Xlastid header:
 
 That will return only messages that came after the message that had id 42.
 
+=method new
+
+Arguments: $feed, $dsn, $user, $password
+
+This is the AtomMQ constructor. The required arguments are $feed and $dsn.
+$feed is the name of the feed.
+$dsn should be a valid L<DBI> dsn and point to a database which you have
+write privileges to.
+$user and $password are optional and should be used if your databases requires
+them.
+
+    my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
+
+=method run
+
+Arguments: None
+
+Call this method to start the server.
+
+=head1 DATABASE
+
+AtomMQ depends on a database to store its data.
+The dsn you pass to the constructor must point to a database which you have
+write privileges to.  Only one table named atommq_entry is required.
+This table will be created automagically for you if it doesn't already exist.
+If you want to create it yourself, see L<AtomMQ::Schema::Result::AtomMQEntry>
+for the schema.  All databases supported by L<DBIx::Class> are supported,
+which are most major databases, including postgresql, sqlite and mysql.
+
 =cut
 
 1;
