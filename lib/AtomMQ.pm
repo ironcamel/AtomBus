@@ -41,6 +41,7 @@ has schema => (
 
 sub BUILD {
     my $self = shift;
+    # Automagically create db table if it doesn't exist.
     $self->schema->deploy;
 }
 
@@ -89,6 +90,8 @@ sub new_post {
         content => $entry->content->body,
     });
 }
+
+1;
 
 # ABSTRACT: An atompub server that supports the message queue/bus model.
 
@@ -190,10 +193,9 @@ It will not let you down.
 And there are all sorts of ways to add redundency to databases and web heads.
 Another advantage of using an atompub server is that atompub is an rfc standard.
 Everyone already has a client for it, their browser.
-Aren't standards are great!  
-By the way, if you just need message queues try L<POE::Component::MessageQueue>.
+Aren't standards great!  
+By the way, if you just need message queues, try
+L<POE::Component::MessageQueue>.
 It rocks. If you need a message bus, give AtomMQ a shot.
 
 =cut
-
-1;
