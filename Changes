@@ -1,5 +1,10 @@
 Revision history for AtomMQ
 
+0.0200  2010-11-14
+        Added auto_create_db option.
+        Added example sql for creating db table.
+        Fixed PSGI example.
+
 0.0102  2010-11-14
         Added directions for running AtomMQ in a PSGI environment.
         Catch exception if db table creation fails.

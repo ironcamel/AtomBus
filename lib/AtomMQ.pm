@@ -4,7 +4,7 @@ use MooseX::NonMoose;
 extends 'Atompub::Server';
 
 use AtomMQ::Schema;
-use Data::Dumper;
+use Capture::Tiny qw(capture);
 use XML::Atom;
 $XML::Atom::DefaultVersion = '1.0';
 
@@ -38,11 +38,16 @@ has schema => (
             { RaiseError => 1, AutoCommit => 1 });
     }
 );
+has auto_create_db => (
+    is => 'ro',
+    isa => 'Bool',
+    default => 1,
+);
 
 sub BUILD {
     my $self = shift;
-    # Automagically create db table if it doesn't exist.
-    eval { $self->schema->deploy };
+    # Automagically create db table.
+    capture { eval { $self->schema->deploy } } if $self->auto_create_db;
 }
 
 my %dispatch = (
@@ -126,18 +131,19 @@ To publish a message to AtomMQ, make a HTTP POST request:
       <div xmlns="http://www.w3.org/1999/xhtml" >an important message</div>
       </content> </entry>' http://localhost/cgi-bin/mycoolfeed
 
-Where mycoolfeed is the name of the file you created in cgi-bin.
-So how is this different than a regular atompub server?
-Just one simple thing. A concept of lastid. So if you just do:
+To retrieve messages, make a HTTP GET request:
 
     $ curl http://localhost/cgi-bin/mycoolfeed
 
-you will get all messages since the feed was created. But lets say you are
-running a client that polls the feed and processes messages.  If this client
-dies, you will not want it to process all the messages again.  So clients are
-responsible for maintaining and persisting the id of the last message they
-processed.  This allows a client to request only messages that came after
-the message with the given id.  They can do this by passing a Xlastid header:
+That will get all the messages since the feed was created.
+Lets say you are running a client that polls the feed and processes messages.
+If this client dies, you will not want it to process all the messages again when
+it comes back up.
+So clients are responsible for maintaining and persisting the id of the last
+message they processed.
+This allows a client to request only messages that came after the message with
+the given id.
+They can do this by passing a Xlastid header:
 
     $ curl -H 'Xlastid: 42' http://localhost/cgi-bin/mycoolfeed
 
@@ -145,13 +151,17 @@ That will return only messages that came after the message that had id 42.
 
 =method new
 
-Arguments: $feed, $dsn, $user, $password
+Arguments: $feed, $dsn, $user, $password, $auto_create_db
 
 This is the AtomMQ constructor. The required arguments are $feed and $dsn.
 $feed is the name of the feed.
 $dsn should be a valid L<DBI> dsn.
-$user and $password are optional and should be used if your databases requires
-them.
+$user and $password are optional and should be provided if your database
+requires them.
+$auto_create_db defaults to 1.
+Set it to 0 if you don't want AtomMQ to attempt to create the db table for you.
+You can leave it set to 1 even if the db table already exists.
+Setting it to 0 improves performance slightly.
 See L</DATABASE> for more info.
 
     my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
@@ -166,12 +176,24 @@ Call this method to start the server.
 
 AtomMQ depends on a database to store its data.
 The dsn you pass to the constructor must point to a database which you have
-write privileges to.  Only one table named atommq_entry is required.
+write privileges to.
+Only one table named atommq_entry is required.
 This table will be created automagically for you if it doesn't already exist.
 Of course for that to work, you will need create table privileges.
-If you want to create it yourself, see L<AtomMQ::Schema::Result::AtomMQEntry>
-for the schema.  All databases supported by L<DBIx::Class> are supported,
-which are most major databases including postgresql, sqlite and mysql.
+You can also create the table yourself if you like.
+Here is an example sql command for creating the table in sqlite:
+
+    CREATE TABLE atommq_entry (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        feed VARCHAR(255) NOT NULL,
+        title VARCHAR(255) NOT NULL,
+        content TEXT NOT NULL
+    );
+
+The feed, title and content columns can be of type TEXT or VARCHAR and can
+be any size you want.
+All databases supported by L<DBIx::Class> are supported,
+which are most major databases including postgresql, sqlite, mysql and oracle.
 
 =head1 PSGI
 
@@ -184,9 +206,11 @@ Copy the following to mycoolfeed.fcgi:
     #!/usr/bin/perl
     use AtomMQ;
     use CGI::Emulate::PSGI;
-    my $dsn = 'dbi:SQLite:dbname=/path/to/foo.db';
-    my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
-    my $app = CGI::Emulate::PSGI->handler(sub { $server->run });
+    my $app = CGI::Emulate::PSGI->handler(sub {
+        my $dsn = 'dbi:SQLite:dbname=/path/to/foo.db';
+        my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
+        $server->run
+    });
 
 Then you can run:
 
@@ -207,10 +231,9 @@ configuration:
 
 =head1 MOTIVATION
 
-Why did I create this module?
 I am a big fan of messaging systems because they make it so easy to create
 scalable systems.
-A traditional message broker is great for creating message queues.
+Existing message brokers are great for creating message queues.
 But once a consumer reads a message off of a queue, it is gone.
 I needed a system to publish events such that multiple heterogeneous services
 could subscribe to them.
@@ -224,7 +247,7 @@ It is in essence just an interface to a database.
 As long as your database and web server are up, AtomMQ will be there for you.
 She will not let you down.
 And there are all sorts of ways to add redundancy to databases and web heads.
-Another advantage of using an atompub server is that atompub is an rfc standard.
+Another advantage of using AtomMQ is that atompub is an RFC standard.
 Everyone already has a client for it, their browser.
 Aren't standards great!  
 By the way, if you just need message queues, try

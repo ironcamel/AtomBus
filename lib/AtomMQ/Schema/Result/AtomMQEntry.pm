@@ -35,24 +35,26 @@ __PACKAGE__->set_primary_key("id");
 
 =head2 id
 
-  data_type: 'integer'
-  is_nullable: 0
-  is_auto_increment: 1
+    data_type: 'integer'
+    is_nullable: 0
+    is_auto_increment: 1
 
 =head2 feed
 
-  data_type: 'text'
-  is_nullable: 1
+    data_type: 'varchar'
+    is_nullable: 1
+    size: 255
 
 =head2 title
 
-  data_type: 'text'
-  is_nullable: 1
+    data_type: 'varchar'
+    is_nullable: 1
+    size: 255
 
 =head2 content
 
-  data_type: 'text'
-  is_nullable: 1
+    data_type: 'text'
+    is_nullable: 1
 
 =cut
 
