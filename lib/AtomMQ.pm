@@ -42,7 +42,7 @@ has schema => (
 sub BUILD {
     my $self = shift;
     # Automagically create db table if it doesn't exist.
-    $self->schema->deploy;
+    eval { $self->schema->deploy };
 }
 
 my %dispatch = (
@@ -99,7 +99,7 @@ sub new_post {
 
     #!/usr/bin/perl
     use AtomMQ;
-    my $dsn = 'dbi:SQLite:dbname=foo.db';
+    my $dsn = 'dbi:SQLite:dbname=/path/to/foo.db';
     my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
     $server->run;
 
@@ -112,10 +112,11 @@ AtomMQ extends Inoue's L<Atompub::Server> which extends Miyagawa's
 L<XML::Atom::Server>.
 Can you feel the love already?
 
-To get started, just copy the code from the </SYNOPSIS> to a file and drop it
-into the cgi-bin folder on your web server, and you will have a shiny new
-atompub server with a feed titled MyCoolFeed.
-It can also be run via mod_perl on apache.
+To get started, just copy the code from the L</SYNOPSIS> to a file.
+You now have a shiny new atompub server with a feed named MyCoolFeed.
+You can configure your web server to run it via CGI or as a mod_perl handler.
+My recommendation is to run it in a L<PSGI> environment.
+See the L</PSGI> section for directions.
 To create more feeds, just copy that file and change 'MyCoolFeed' to
 'MyOtherFeed'.
 
@@ -148,11 +149,10 @@ Arguments: $feed, $dsn, $user, $password
 
 This is the AtomMQ constructor. The required arguments are $feed and $dsn.
 $feed is the name of the feed.
-$dsn should be a valid L<DBI> dsn and point to a database which you have
-write privileges to.
+$dsn should be a valid L<DBI> dsn.
 $user and $password are optional and should be used if your databases requires
 them.
-See </DATABASE> for more info.
+See L</DATABASE> for more info.
 
     my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
 
@@ -168,14 +168,47 @@ AtomMQ depends on a database to store its data.
 The dsn you pass to the constructor must point to a database which you have
 write privileges to.  Only one table named atommq_entry is required.
 This table will be created automagically for you if it doesn't already exist.
+Of course for that to work, you will need create table privileges.
 If you want to create it yourself, see L<AtomMQ::Schema::Result::AtomMQEntry>
 for the schema.  All databases supported by L<DBIx::Class> are supported,
 which are most major databases including postgresql, sqlite and mysql.
 
+=head1 PSGI
+
+If you have the need for speed, then this section is for you.
+AtomMQ can be run in a persistent L<PSGI> environment via L<Plack>.
+This is the recommended way to run AtomMQ, but it takes slightly more work.
+You will need to have L<Plack> and L<CGI::Emulate::PSGI> installed.
+Copy the following to mycoolfeed.fcgi:
+
+    #!/usr/bin/perl
+    use AtomMQ;
+    use CGI::Emulate::PSGI;
+    my $dsn = 'dbi:SQLite:dbname=/path/to/foo.db';
+    my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
+    my $app = CGI::Emulate::PSGI->handler(sub { $server->run });
+
+Then you can run:
+
+    plackup -p 5000 mycoolfeed.fcgi
+
+Now AtomMQ is running on port 5000 via the L<HTTP::Server::PSGI> web server.
+If you want to run in a FastCGI environment using your favorite web server,
+then you can run:
+
+    plackup -s FCGI --listen /tmp/fcgi.sock mycoolfeed.fcgi
+
+Then configure your web server accordingly. Here is an example lighttpd
+configuration:
+
+    fastcgi.server += (
+        ".fcgi" => ((  "socket" => "/tmp/fcgi.sock" ))
+    )
+
 =head1 MOTIVATION
 
 Why did I create this module?
-I am a big fan of messaging systems and make heavy use of them to easily create
+I am a big fan of messaging systems because they make it so easy to create
 scalable systems.
 A traditional message broker is great for creating message queues.
 But once a consumer reads a message off of a queue, it is gone.
@@ -187,10 +220,10 @@ but they are extremely flakey in my experience.
 Actually, I have found ActiveMQ to be broken in general.
 An instance I manage has to be restarted at least twice a week.
 AtomMQ on the other hand will be extremely stable, because it is so simple.
-It is just a view into a database table.
+It is in essence just an interface to a database.
 As long as your database and web server are up, AtomMQ will be there for you.
-It will not let you down.
-And there are all sorts of ways to add redundency to databases and web heads.
+She will not let you down.
+And there are all sorts of ways to add redundancy to databases and web heads.
 Another advantage of using an atompub server is that atompub is an rfc standard.
 Everyone already has a client for it, their browser.
 Aren't standards great!  
