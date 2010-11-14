@@ -102,11 +102,12 @@ sub new_post {
 
 =head1 DESCRIPTION
 
-An atompub server that supports the message queue/bus model.  Throughout this
-document, I will use the term message when refering to an atom feed entry, since
-the point of this module is to use atompub for messaging purposes.  AtomMQ
-extends Inoue's Atompub::Server which extends Miyagawa's XML::Atom::Server.  Can
-you feel the love already?
+An atompub server that supports the message queue/bus model.
+Throughout this document, I will use the term message when refering to an atom
+feed entry, since the point of this module is to use atompub for messaging.
+AtomMQ extends Inoue's L<Atompub::Server> which extends Miyagawa's
+L<XML::Atom::Server>.
+Can you feel the love already?
 
 Usage:
 
@@ -117,9 +118,10 @@ Usage:
     $server->run;
 
 Just drop the above file in your cgi-bin folder on your web server, and you will
-have a shiny new atompub server with a feed titled MyCoolFeed.  It can also be
-run via mod_perl on apache, but that is more complicated.  To create more
-feeds, just copy that file and change 'MyCoolFeed' to 'MyOtherFeed'.
+have a shiny new atompub server with a feed titled MyCoolFeed.
+It can also be run via mod_perl on apache.
+To create more feeds, just copy that file and change 'MyCoolFeed' to
+'MyOtherFeed'.
 
 To publish a message to AtomMQ, make a HTTP POST request:
 
@@ -128,9 +130,8 @@ To publish a message to AtomMQ, make a HTTP POST request:
       </content> </entry>' http://localhost/cgi-bin/mycoolfeed
 
 Where mycoolfeed is the name of the file you created in cgi-bin.
-
-So how is this different than a regular atompub server?  Just one simple thing.
-A concept of lastid.  So if you just do:
+So how is this different than a regular atompub server?
+Just one simple thing. A concept of lastid. So if you just do:
 
     $ curl http://localhost/cgi-bin/mycoolfeed
 
@@ -155,6 +156,7 @@ $dsn should be a valid L<DBI> dsn and point to a database which you have
 write privileges to.
 $user and $password are optional and should be used if your databases requires
 them.
+See </DATABASE> for more info.
 
     my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
 
@@ -172,7 +174,7 @@ write privileges to.  Only one table named atommq_entry is required.
 This table will be created automagically for you if it doesn't already exist.
 If you want to create it yourself, see L<AtomMQ::Schema::Result::AtomMQEntry>
 for the schema.  All databases supported by L<DBIx::Class> are supported,
-which are most major databases, including postgresql, sqlite and mysql.
+which are most major databases including postgresql, sqlite and mysql.
 
 =cut
 

@@ -1,5 +1,8 @@
 Revision history for AtomMQ
 
+0.0101  2010-11-14
+        Added more documentation.
+
 0.0100  2010-11-13
         Now using dbic instead of dbi.
         Auto creating of db table should work for all db's supported by dbic.
