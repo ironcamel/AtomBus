@@ -24,7 +24,12 @@ has schema => (
     isa => 'AtomMQ::Schema',
     lazy => 1,
     predicate => 'has_schema',
-    default => sub { AtomMQ::Schema->connect(shift->db_info) }
+    default => sub {
+        my $self = shift;
+        my $db_info = $self->db_info;
+        $db_info = { %$db_info, AutoCommit => 1, RaiseError => 1 };
+        return AtomMQ::Schema->connect($db_info);
+    }
 );
 has auto_create_db => (
     is => 'ro',
@@ -155,11 +160,9 @@ Setting it to 0 improves performance slightly.
 See L</DATABASE> for more info. Example:
 
     my $server = AtomMQ->new(feed => 'MyCoolFeed', db_info => {
-        dsn        => 'dbi:SQLite:dbname=/path/to/foo.db',
-        user       => 'joe',
-        password   => 'momma',
-        AutoCommit => 1,
-        RaiseError => 1,
+        dsn      => 'dbi:SQLite:dbname=/path/to/foo.db',
+        user     => 'joe',
+        password => 'momma',
     });
 
 =method run
@@ -222,7 +225,7 @@ Then configure your web server accordingly. Here is an example lighttpd
 configuration:
 
     fastcgi.server += (
-        ".fcgi" => ((  "socket" => "/tmp/fcgi.sock" ))
+        ".fcgi" => (( "socket" => "/tmp/fcgi.sock" ))
     )
 
 =head1 MOTIVATION
