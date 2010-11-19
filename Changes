@@ -1,5 +1,10 @@
 Revision history for AtomMQ
 
+0.0300  2010-11-19
+        Replaced dsn/user/password constructor params with db_info.
+        Added exception handling test for missing db_info param.
+        Updated default schema to use TEXT columns instead of VARCHAR.
+
 0.0200  2010-11-14
         Added auto_create_db option.
         Added example sql for creating db table.

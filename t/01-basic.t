@@ -1,6 +1,7 @@
 use Test::More;
 use AtomMQ;
 use AtomMQ::Schema;
+use Test::Exception;
 use Test::MockObject;
 use Test::MockObject::Extends;
 
@@ -11,7 +12,7 @@ my $title = 'title1';
 my $content = 'content1';
 my $feed = 'foo_feed';
 
-my $server = AtomMQ->new(feed => $feed, dsn => $dsn);
+my $server = AtomMQ->new(feed => $feed, db_info => { dsn => $dsn });
 ok $server, 'Created AtomMQ server.';
 
 my $mock_content = Test::MockObject->new();
@@ -40,6 +41,9 @@ my ($entry2) = $schema->resultset('AtomMQEntry')->search(
 ok $entry2, 'Found entry 2.';
 
 ok $entry2->id > $entry1->id, 'Id field got incremented.';
+
+throws_ok { AtomMQ->new(feed => $feed) } qr/db_info or schema.*required/,
+    'Correct exception for missing db_info';
 
 unlink $dbfile;
 done_testing;

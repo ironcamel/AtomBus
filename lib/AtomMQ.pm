@@ -15,28 +15,16 @@ has feed => (
     isa => 'Str',
     required => 1,
 );
-has dsn => (
+has db_info => (
     is => 'ro',
-    isa => 'Str',
-    required => 1,
-);
-has user => (
-    is => 'ro',
-    isa => 'Str',
-);
-has password => (
-    is => 'ro',
-    isa => 'Str',
+    isa => 'HashRef[Str]',
 );
 has schema => (
     is => 'ro',
     isa => 'AtomMQ::Schema',
     lazy => 1,
-    default => sub {
-        my $self = shift;
-        AtomMQ::Schema->connect($self->dsn, $self->user, $self->password,
-            { RaiseError => 1, AutoCommit => 1 });
-    }
+    predicate => 'has_schema',
+    default => sub { AtomMQ::Schema->connect(shift->db_info) }
 );
 has auto_create_db => (
     is => 'ro',
@@ -46,6 +34,8 @@ has auto_create_db => (
 
 sub BUILD {
     my $self = shift;
+    die "A db_info or schema param is required."
+        unless $self->db_info or $self->has_schema;
     # Automagically create db table.
     capture { eval { $self->schema->deploy } } if $self->auto_create_db;
 }
@@ -104,8 +94,8 @@ sub new_post {
 
     #!/usr/bin/perl
     use AtomMQ;
-    my $dsn = 'dbi:SQLite:dbname=/path/to/foo.db';
-    my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
+    my $db_info = { dsn => 'dbi:SQLite:dbname=/path/to/foo.db' };
+    my $server = AtomMQ->new(feed => 'MyCoolFeed', db_info => $db_info);
     $server->run;
 
 =head1 DESCRIPTION
@@ -151,20 +141,26 @@ That will return only messages that came after the message that had id 42.
 
 =method new
 
-Arguments: $feed, $dsn, $user, $password, $auto_create_db
+Arguments: $feed, $db_info, $auto_create_db
 
-This is the AtomMQ constructor. The required arguments are $feed and $dsn.
+This is the AtomMQ constructor. The required arguments are $feed and $db_info.
 $feed is the name of the feed.
-$dsn should be a valid L<DBI> dsn.
-$user and $password are optional and should be provided if your database
-requires them.
+$db_info is a hashref containing the database connection info as described
+in L<DBIx::Class::Storage::DBI/connect_info>.
+It must at least contain a dsn entry.
 $auto_create_db defaults to 1.
 Set it to 0 if you don't want AtomMQ to attempt to create the db table for you.
 You can leave it set to 1 even if the db table already exists.
 Setting it to 0 improves performance slightly.
-See L</DATABASE> for more info.
+See L</DATABASE> for more info. Example:
 
-    my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
+    my $server = AtomMQ->new(feed => 'MyCoolFeed', db_info => {
+        dsn        => 'dbi:SQLite:dbname=/path/to/foo.db',
+        user       => 'joe',
+        password   => 'momma',
+        AutoCommit => 1,
+        RaiseError => 1,
+    });
 
 =method run
 
@@ -175,7 +171,7 @@ Call this method to start the server.
 =head1 DATABASE
 
 AtomMQ depends on a database to store its data.
-The dsn you pass to the constructor must point to a database which you have
+The db_info you pass to the constructor must point to a database which you have
 write privileges to.
 Only one table named atommq_entry is required.
 This table will be created automagically for you if it doesn't already exist.
@@ -207,8 +203,8 @@ Copy the following to mycoolfeed.fcgi:
     use AtomMQ;
     use CGI::Emulate::PSGI;
     my $app = CGI::Emulate::PSGI->handler(sub {
-        my $dsn = 'dbi:SQLite:dbname=/path/to/foo.db';
-        my $server = AtomMQ->new(feed => 'MyCoolFeed', dsn => $dsn);
+        my $db_info = { dsn => 'dbi:SQLite:dbname=/path/to/foo.db' };
+        my $server = AtomMQ->new(feed => 'MyCoolFeed', db_info => $db_info);
         $server->run
     });
 

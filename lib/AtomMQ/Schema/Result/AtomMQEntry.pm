@@ -12,14 +12,12 @@ __PACKAGE__->add_columns(
         is_auto_increment => 1,
     },
     feed => {
-        data_type => 'varchar',
+        data_type => 'text',
         is_nullable => 0,
-        size => 255,
     },
     title => {
-        data_type => 'varchar',
+        data_type => 'text',
         is_nullable => 0,
-        size => 255,
     },
     content => {
         data_type => 'text',
@@ -41,20 +39,18 @@ __PACKAGE__->set_primary_key("id");
 
 =head2 feed
 
-    data_type: 'varchar'
-    is_nullable: 1
-    size: 255
+    data_type: 'text'
+    is_nullable: 0
 
 =head2 title
 
-    data_type: 'varchar'
-    is_nullable: 1
-    size: 255
+    data_type: 'text'
+    is_nullable: 0
 
 =head2 content
 
     data_type: 'text'
-    is_nullable: 1
+    is_nullable: 0
 
 =cut
 
