@@ -1,5 +1,8 @@
 Revision history for AtomMQ
 
+0.0301  2010-11-19
+        Set AutoCommit and RaiseError DBI options to true.
+
 0.0300  2010-11-19
         Replaced dsn/user/password constructor params with db_info.
         Added exception handling test for missing db_info param.

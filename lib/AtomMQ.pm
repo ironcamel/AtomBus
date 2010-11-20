@@ -183,8 +183,8 @@ Here is an example sql command for creating the table in sqlite:
 
     CREATE TABLE atommq_entry (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        feed VARCHAR(255) NOT NULL,
-        title VARCHAR(255) NOT NULL,
+        feed TEXT NOT NULL,
+        title TEXT NOT NULL,
         content TEXT NOT NULL
     );
 
