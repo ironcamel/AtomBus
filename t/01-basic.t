@@ -42,7 +42,7 @@ ok $entry2, 'Found entry 2.';
 
 ok $entry2->id > $entry1->id, 'Id field got incremented.';
 
-throws_ok { AtomMQ->new(feed => $feed) } qr/db_info or schema.*required/,
+throws_ok { AtomMQ->new(feed => $feed) } qr/requires.+db_info.+or.+schema/,
     'Correct exception for missing db_info';
 
 unlink $dbfile;

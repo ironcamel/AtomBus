@@ -22,14 +22,7 @@ has db_info => (
 has schema => (
     is => 'ro',
     isa => 'AtomMQ::Schema',
-    lazy => 1,
-    predicate => 'has_schema',
-    default => sub {
-        my $self = shift;
-        my $db_info = $self->db_info;
-        $db_info = { %$db_info, AutoCommit => 1, RaiseError => 1 };
-        return AtomMQ::Schema->connect($db_info);
-    }
+    lazy_build => 1,
 );
 has auto_create_db => (
     is => 'ro',
@@ -37,24 +30,30 @@ has auto_create_db => (
     default => 1,
 );
 
+sub _build_schema {
+    my $self = shift;
+    my $db_info = $self->db_info;
+    $db_info = { %$db_info, AutoCommit => 1, RaiseError => 1 };
+    return AtomMQ::Schema->connect($db_info);
+}
+
 sub BUILD {
     my $self = shift;
-    die "A db_info or schema param is required."
+    die "AtomMQ requires a db_info or schema parameter."
         unless $self->db_info or $self->has_schema;
     # Automagically create db table.
     capture { eval { $self->schema->deploy } } if $self->auto_create_db;
 }
-
-my %dispatch = (
-    GET  => 'get_feed',
-    POST => 'new_post',
-);
 
 sub handle_request {
     my $self = shift;
     $self->response_content_type('text/plain');
     $self->response_content_type('text/xml');
     my $method = $self->request_method || 'METHOD IS MISSING';
+    my %dispatch = (
+        GET  => 'get_feed',
+        POST => 'new_post',
+    );
     my $handler = $dispatch{$method};
     die "HTTP method [$method] is not supported\n" unless $handler;
     $self->$handler();
