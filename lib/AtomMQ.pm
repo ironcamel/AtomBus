@@ -111,11 +111,13 @@ AtomMQ extends Inoue's L<Atompub::Server> which extends Miyagawa's
 L<XML::Atom::Server>.
 Can you feel the love already?
 
-To get started, just copy the code from the L</SYNOPSIS> to a file.
+To get started, just copy the code from the L</SYNOPSIS> to a file
+and place it in your systems cgi-bin folder.
+For all of the examples, it will be assumed the file is named mycoolfeed.cgi.
 You now have a shiny new atompub server with a feed named MyCoolFeed.
-You can configure your web server to run it via CGI or as a mod_perl handler.
-My recommendation is to run it in a L<PSGI> environment.
-See the L</PSGI> section for directions.
+You can run it via CGI or as a mod_perl handler.
+To run in a FastCGI or L<PSGI> environment, see the L</PSGI> section.
+This is highly recommended because it will run considerably faster.
 To create more feeds, just copy that file and change 'MyCoolFeed' to
 'MyOtherFeed'.
 
@@ -123,11 +125,11 @@ To publish a message to AtomMQ, make a HTTP POST request:
 
     $ curl -d '<entry> <title>allo</title> <content type="xhtml">
       <div xmlns="http://www.w3.org/1999/xhtml" >an important message</div>
-      </content> </entry>' http://localhost/cgi-bin/mycoolfeed
+      </content> </entry>' http://localhost/cgi-bin/mycoolfeed.cgi
 
 To retrieve messages, make a HTTP GET request:
 
-    $ curl http://localhost/cgi-bin/mycoolfeed
+    $ curl http://localhost/cgi-bin/mycoolfeed.cgi
 
 That will get all the messages since the feed was created.
 Lets say you are running a client that polls the feed and processes messages.
@@ -139,7 +141,7 @@ This allows a client to request only messages that came after the message with
 the given id.
 They can do this by passing a Xlastid header:
 
-    $ curl -H 'Xlastid: 42' http://localhost/cgi-bin/mycoolfeed
+    $ curl -H 'Xlastid: 42' http://localhost/cgi-bin/mycoolfeed.cgi
 
 That will return only messages that came after the message that had id 42.
 
@@ -196,36 +198,39 @@ which are most major databases including postgresql, sqlite, mysql and oracle.
 =head1 PSGI
 
 If you have the need for speed, then this section is for you.
-AtomMQ can be run in a persistent L<PSGI> environment via L<Plack>.
+Running via CGI can be very slow.
+AtomMQ can be run in a persistent FastCGI or L<PSGI> environment via L<Plack>.
 This is the recommended way to run AtomMQ, but it takes slightly more work.
-You will need to have L<Plack> and L<CGI::Emulate::PSGI> installed.
-Copy the following to mycoolfeed.fcgi:
+You will need to have L<Plack>, L<CGI::Emulate::PSGI> and L<CGI::Compile>
+installed.
+Copy the following to mycoolfeed.psgi:
 
-    #!/usr/bin/perl
-    use AtomMQ;
-    use CGI::Emulate::PSGI;
-    my $app = CGI::Emulate::PSGI->handler(sub {
-        my $db_info = { dsn => 'dbi:SQLite:dbname=/path/to/foo.db' };
-        my $server = AtomMQ->new(feed => 'MyCoolFeed', db_info => $db_info);
-        $server->run
-    });
+    use Plack::App::WrapCGI;
+    my $app = Plack::App::WrapCGI->new(script => "/path/to/mycoolfeed.cgi")->to_app;
 
-Then you can run:
+The "/path/to/mycoolfeed.cgi" string should be changed to the path of the file
+created in the previous examples.
+Then you can just run:
 
-    plackup -p 5000 mycoolfeed.fcgi
+    plackup -p 5000 mycoolfeed.psgi
 
 Now AtomMQ is running on port 5000 via the L<HTTP::Server::PSGI> web server.
 If you want to run in a FastCGI environment using your favorite web server,
 then you can run:
 
-    plackup -s FCGI --listen /tmp/fcgi.sock mycoolfeed.fcgi
+    plackup -s FCGI --listen /tmp/fcgi.sock mycoolfeed.psgi
 
 Then configure your web server accordingly. Here is an example lighttpd
 configuration:
 
     fastcgi.server += (
-        ".fcgi" => (( "socket" => "/tmp/fcgi.sock" ))
+        "/mycoolfeed" => ((
+            "socket" => "/tmp/fcgi.sock",
+            "check-local" => "disable",
+        ))
     )
+
+AtomMQ will be running at http://localhost/mycoolfeed.
 
 =head1 MOTIVATION
 
