@@ -160,11 +160,13 @@ You can leave it set to 1 even if the db table already exists.
 Setting it to 0 improves performance slightly.
 See L</DATABASE> for more info. Example:
 
-    my $server = AtomMQ->new(feed => 'MyCoolFeed', db_info => {
-        dsn      => 'dbi:SQLite:dbname=/path/to/foo.db',
-        user     => 'joe',
-        password => 'momma',
-    });
+    my $server = AtomMQ->new(feed => 'MyCoolFeed', auto_create_db => 0,
+        db_info => {
+            dsn      => 'dbi:SQLite:dbname=/path/to/foo.db',
+            user     => 'joe',
+            password => 'momma',
+        }
+    );
 
 =method run
 
