@@ -12,7 +12,7 @@ my $title = 'title1';
 my $content = 'content1';
 my $feed = 'foo_feed';
 
-my $server = AtomMQ->new(feed => $feed, db_info => { dsn => $dsn });
+my $server = AtomMQ->new(db_info => { dsn => $dsn });
 ok $server, 'Created AtomMQ server.';
 
 my $mock_content = Test::MockObject->new();
@@ -25,7 +25,7 @@ $mock_atom_body->set_always(content => $mock_content);
 $server = Test::MockObject::Extends->new($server);
 $server->set_always(atom_body => $mock_atom_body);
 $server->set_always(request_method => 'POST');
-$server->new_post();
+$server->new_post($feed);
 
 my $schema = AtomMQ::Schema->connect($dsn);
 my ($entry1) = $schema->resultset('AtomMQEntry')->search(
@@ -34,7 +34,7 @@ ok $entry1, 'Found entry 1.';
 
 $content = 'content2';
 $title = 'title2';
-$server->new_post();
+$server->new_post($feed);
 
 my ($entry2) = $schema->resultset('AtomMQEntry')->search(
     { title => $title, content => $content, feed => $feed });

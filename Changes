@@ -1,5 +1,14 @@
 Revision history for AtomMQ
 
+1.0000  2010-11-20
+        One AtomMQ server can serve multiple feeds.
+        Posting to a feed that doesn't exist will automatically create the feed
+            for you.
+        The feed name is no longer a param of the constructor.  It is passed
+            in through the uri, e.g., /atommq/feed=widgets
+        Added a FastCGI section to the docs.
+        Made the PSGI example simpler in the docs.
+
 0.0301  2010-11-19
         Set AutoCommit and RaiseError DBI options to true.
 
