@@ -4,9 +4,14 @@ use MooseX::NonMoose;
 extends 'Atompub::Server';
 
 use AtomMQ::Schema;
+use Atompub::DateTime qw(datetime);
 use Capture::Tiny qw(capture);
+#use DateTime;
+use Data::Dumper;
+use UUID::Tiny;
 use XML::Atom;
 $XML::Atom::DefaultVersion = '1.0';
+use XML::Atom::Person;
 
 # VERSION
 
@@ -37,12 +42,13 @@ sub BUILD {
     die "The AtomMQ constructor requires a db_info or schema parameter."
         unless $self->db_info or $self->has_schema;
     # Automagically create db table.
-    capture { eval { $self->schema->deploy } } if $self->auto_create_db;
+    $self->schema->deploy if $self->auto_create_db;
+    #capture { eval { $self->schema->deploy } } if $self->auto_create_db;
 }
 
 sub handle_request {
     my $self = shift;
-    $self->response_content_type('text/xml');
+    $self->response_content_type('application/xml');
     my $method = $self->request_method || 'METHOD IS MISSING';
     my %dispatch = (
         GET  => 'get_feed',
@@ -57,32 +63,82 @@ sub handle_request {
 }
 
 sub get_feed {
-    my ($self, $feed_name) = @_;
+    my ($self, $feed_title) = @_;
+    $feed_title = lc $feed_title;
     my $last_id = $self->request_header('Xlastid') || 0;
-    my $feed = XML::Atom::Feed->new;
-    $feed->title($feed_name);
-    my $rset = $self->schema->resultset('AtomMQEntry')->search({
-        id   => { '>' => $last_id },
-        feed => $feed_name,
-    });
-    while (my $row = $rset->next) {
-        my $entry = XML::Atom::Entry->new;
-        $entry->title($row->title);
-        $entry->content($row->content);
-        $entry->id($row->id);
-        $feed->add_entry($entry);
+    my $order_id;
+    my $schema = $self->schema;
+    if ($last_id) {
+        my $entry = $schema->resultset('AtomMQEntry')->find({id => $last_id});
+        if (not $entry) {
+            $self->response_code(400);
+            return "No such entry exists with id $last_id";
+        }
+        $order_id = $entry->order_id;
     }
+
+    my $db_feed = $self->schema->resultset('AtomMQFeed')->find(
+        { title => $feed_title });
+    if (not $db_feed) {
+        $self->response_code(404);
+        return "No such feed exists named $feed_title";
+    }
+
+    my $feed = XML::Atom::Feed->new;
+    $feed->title($feed_title);
+    $feed->id($db_feed->id);
+    my $person = XML::Atom::Person->new;
+    $person->name($db_feed->author_name);
+    $feed->author($person);
+    $feed->updated($db_feed->updated);
+
+    my %query = (feed_title => $feed_title);
+    $query{order_id} = { '>' => $order_id } if $order_id;
+    my $rset = $self->schema->resultset('AtomMQEntry')->search(
+        \%query, { order_by => ['order_id'] });
+    while (my $entry = $rset->next) {
+        $feed->add_entry(_entry_from_db($entry));
+    }
+
     return $feed->as_xml;
 }
 
 sub new_post {
-    my ($self, $feed_name) = @_;
-    my $entry = $self->atom_body or die "Atom content is missing";
-    $self->schema->resultset('AtomMQEntry')->create({
-        feed    => $feed_name,
-        title   => $entry->title,
-        content => $entry->content->body,
+    my ($self, $feed_title) = @_;
+    $feed_title = lc $feed_title;
+    my $entry = $self->atom_body;
+    if (not $entry) {
+        $self->response_code(400);
+        return "Atom content is missing";
+    }
+    my $updated = datetime->w3cz;
+    my $db_feed = $self->schema->resultset('AtomMQFeed')->find_or_create({
+        title       => $feed_title,
+        id          => _gen_id(),
+        author_name => 'AtomMQ',
+        updated     => $updated,
+    }, { key => 'title_unique' });
+    my $db_entry = $self->schema->resultset('AtomMQEntry')->create({
+        feed_title => $feed_title,
+        id         => _gen_id(),
+        title      => $entry->title,
+        content    => $entry->content->body,
+        updated    => $updated,
     });
+    $db_feed->update({updated => $updated});
+    return _entry_from_db($db_entry)->as_xml;
+}
+
+sub _gen_id { 'urn:uuid:' . create_UUID_as_string() }
+
+sub _entry_from_db {
+    my $row = shift;
+    my $entry = XML::Atom::Entry->new;
+    $entry->title($row->title);
+    $entry->content($row->content);
+    $entry->id($row->id);
+    $entry->updated($row->updated);
+    return $entry;
 }
 
 # ABSTRACT: An atompub server that supports the message queue/bus model.
@@ -137,9 +193,7 @@ This allows a client to request only messages that came after the message with
 the given id.
 They can do this by passing a Xlastid header:
 
-    $ curl -H 'Xlastid: 42' http://localhost/atommq/feed=widgets
-
-That will return only messages that came after the message that had id 42.
+    $ curl -H 'Xlastid: urn:uuid:4018425e-f747-11df-b990-b7043ee4d39e' http://localhost/atommq/feed=widgets
 
 =method new
 
@@ -171,24 +225,11 @@ Call this method to start the server.
 
 =head1 DATABASE
 
-AtomMQ depends on a database to store its data.
+AtomMQ uses a database to store its data.
 The db_info you pass to the constructor must point to a database which you have
 write privileges to.
-Only one table named atommq_entry is required.
-This table will be created automagically for you if it doesn't already exist.
+The tables will be created automagically for you if they don't already exist.
 Of course for that to work, you will need create table privileges.
-You can also create the table yourself if you like.
-Here is an example sql command for creating the table in sqlite:
-
-    CREATE TABLE atommq_entry (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        feed TEXT NOT NULL,
-        title TEXT NOT NULL,
-        content TEXT NOT NULL
-    );
-
-The feed, title and content columns can be of type TEXT or VARCHAR and can
-be any size you want.
 All databases supported by L<DBIx::Class> are supported,
 which are most major databases including postgresql, sqlite, mysql and oracle.
 
@@ -244,14 +285,13 @@ Of course you can use any PSGI/Plack web server via the -s option to plackup.
 
 =head1 MOTIVATION
 
-I am a big fan of messaging systems because they make it so easy to create
-scalable systems.
+I like messaging systems because they make it so easy to create scalable applications.
 Existing message brokers are great for creating message queues.
 But once a consumer reads a message off of a queue, it is gone.
 I needed a system to publish events such that multiple heterogeneous services
 could subscribe to them.
 So I really needed a message bus, not a message queue.
-I know for example I could have used something called topics in ActiveMQ,
+I could for example have used something called topics in ActiveMQ,
 but I have found them to have issues with persistence.
 Actually, I have found ActiveMQ to be broken in general.
 An instance I manage has to be restarted at least twice a week.

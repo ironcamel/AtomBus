@@ -29,7 +29,7 @@ $server->new_post($feed);
 
 my $schema = AtomMQ::Schema->connect($dsn);
 my ($entry1) = $schema->resultset('AtomMQEntry')->search(
-    { title => $title, content => $content, feed => $feed });
+    { title => $title, content => $content, feed_title => $feed });
 ok $entry1, 'Found entry 1.';
 
 $content = 'content2';
@@ -37,10 +37,10 @@ $title = 'title2';
 $server->new_post($feed);
 
 my ($entry2) = $schema->resultset('AtomMQEntry')->search(
-    { title => $title, content => $content, feed => $feed });
+    { title => $title, content => $content, feed_title => $feed });
 ok $entry2, 'Found entry 2.';
 
-ok $entry2->id > $entry1->id, 'Id field got incremented.';
+ok $entry2->order_id > $entry1->order_id, 'Id field got incremented.';
 
 throws_ok { AtomMQ->new(feed => $feed) } qr/requires.+db_info.+or.+schema/,
     'Correct exception for missing db_info';

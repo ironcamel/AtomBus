@@ -1,5 +1,10 @@
 Revision history for AtomMQ
 
+1.0100  2010-11-25
+        Generted feed now validates against http://validator.w3.org/feed
+        Added atommq_feed table.  Now there are 2 tables total.
+        Entry and feed id's are now urn's
+
 1.0000  2010-11-20
         One AtomMQ server can serve multiple feeds.
         Posting to a feed that doesn't exist will automatically create the feed
