@@ -6,8 +6,6 @@ extends 'Atompub::Server';
 use AtomMQ::Schema;
 use Atompub::DateTime qw(datetime);
 use Capture::Tiny qw(capture);
-#use DateTime;
-use Data::Dumper;
 use UUID::Tiny;
 use XML::Atom;
 $XML::Atom::DefaultVersion = '1.0';
@@ -22,12 +20,18 @@ has db_info => (
 has schema => (
     is => 'ro',
     isa => 'AtomMQ::Schema',
+    #isa => 'DBIx::Class::Schema',
     lazy_build => 1,
 );
 has auto_create_db => (
     is => 'ro',
     isa => 'Bool',
     default => 1,
+);
+has max_msgs_per_request => (
+    is => 'ro',
+    isa => 'Int',
+    default => -1,
 );
 
 sub _build_schema {
@@ -41,8 +45,8 @@ sub BUILD {
     my $self = shift;
     die "The AtomMQ constructor requires a db_info or schema parameter."
         unless $self->db_info or $self->has_schema;
-    # Automagically create db table.
-    $self->schema->deploy if $self->auto_create_db;
+    # Automagically create db.
+    capture { $self->schema->deploy } if $self->auto_create_db;
     #capture { eval { $self->schema->deploy } } if $self->auto_create_db;
 }
 
@@ -96,7 +100,8 @@ sub get_feed {
     $query{order_id} = { '>' => $order_id } if $order_id;
     my $rset = $self->schema->resultset('AtomMQEntry')->search(
         \%query, { order_by => ['order_id'] });
-    while (my $entry = $rset->next) {
+    my $count = $self->max_msgs_per_request;
+    while ($count-- && (my $entry = $rset->next)) {
         $feed->add_entry(_entry_from_db($entry));
     }
 
