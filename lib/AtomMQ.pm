@@ -20,7 +20,6 @@ has db_info => (
 has schema => (
     is => 'ro',
     isa => 'AtomMQ::Schema',
-    #isa => 'DBIx::Class::Schema',
     lazy_build => 1,
 );
 has auto_create_db => (
@@ -31,7 +30,7 @@ has auto_create_db => (
 has max_msgs_per_request => (
     is => 'ro',
     isa => 'Int',
-    default => -1,
+    default => 100,
 );
 
 sub _build_schema {
@@ -150,7 +149,6 @@ sub _entry_from_db {
 
 =head1 SYNOPSIS
 
-    #!/usr/bin/perl
     use AtomMQ;
     my $db_info = { dsn => 'dbi:SQLite:dbname=/path/to/foo.db' };
     my $server = AtomMQ->new(db_info => $db_info);
@@ -168,8 +166,8 @@ L<XML::Atom::Server>.
 Can you feel the love already?
 
 To create an AtomMQ server, just copy the code from the L</SYNOPSIS>.
-Make sure to change the dsn to something valid and chmod +x the file.
-Right away you can run it via CGI or as a mod_perl handler.
+Make sure to change the dsn to something valid.
+You can run it via CGI or as a mod_perl handler.
 To run in a FastCGI or L<PSGI> environment, see the L</FastCGI> and L</PSGI>
 sections in this document.
 This is highly recommended because it will run considerably faster.
@@ -202,19 +200,29 @@ They can do this by passing a Xlastid header:
 
 =method new
 
-Arguments: \%db_info [, $auto_create_db]
+Arguments: \%db_info, $auto_create_db, $max_msgs_per_request
 
 This is the AtomMQ constructor. Only $db_info is required.
 $db_info is a hashref containing the database connection info as described
 in L<DBIx::Class::Storage::DBI/connect_info>.
 It must at least contain a dsn entry.
 $auto_create_db defaults to 1.
-Set it to 0 if you don't want AtomMQ to attempt to create the db table for you.
-You can leave it set to 1 even if the db table already exists.
+Set it to 0 if you don't want AtomMQ to attempt to create the db tables for you.
+You can leave it set to 1 even if the db tables already exist.
 Setting it to 0 improves performance slightly.
+$max_msgs_per_request defaults to 100.
+This default value may change in future versions, so you may want to set it
+explicitly.
+It determines the maximum number of messages returned by the server for a GET
+request.
+So if there were 1000 messages, a GET request will return messages 1 - 100.
+To get messages 101 - 200, you should provide the id of message 100 in
+the next GET request via the Xlastid header, as shown above.
 See L</DATABASE> for more info. Example:
 
-    my $server = AtomMQ->new(auto_create_db => 0,
+    my $server = AtomMQ->new(
+        auto_create_db => 0,
+        max_msgs_per_request => 100,
         db_info => {
             dsn      => 'dbi:SQLite:dbname=/path/to/foo.db',
             user     => 'joe',

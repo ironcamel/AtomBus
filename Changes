@@ -1,5 +1,9 @@
 Revision history for AtomMQ
 
+1.0200  2010-12-03
+        Added support for max_msgs_per_request parameter and corresponding
+            tests and documentation.
+
 1.0100  2010-11-25
         Generted feed now validates against http://validator.w3.org/feed
         Added atommq_feed table.  Now there are 2 tables total.
