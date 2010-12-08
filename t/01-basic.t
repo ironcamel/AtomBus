@@ -1,44 +1,60 @@
-use Test::More tests => 6;
+use strict;
+use warnings;
+use Test::More import => ['!pass'], tests => 11;
+use Dancer::Test;
+
+use Dancer qw(:syntax);
+use Dancer::Plugin::DBIC qw(schema);
 use AtomMQ;
-use Test::Exception;
-use Test::MockObject;
-use Test::MockObject::Extends;
 
-my $feed = 'foo_feed';
-my $title = 'title1';
-my $content = 'content1';
+set plugins => {
+    DBIC => {
+        atommq => {
+            schema_class => 'AtomMQ::Schema',
+            dsn => 'dbi:SQLite:dbname=:memory:',
+        }
+    }
+};
 
-my $server = AtomMQ->new(db_info => { dsn => 'dbi:SQLite:dbname=:memory:' });
-ok $server, 'Created AtomMQ server.';
+schema->deploy;
 
-my $mock_content = Test::MockObject->new();
-$mock_content->set_bound(body => \$content);
+my $xml1 = q{
+    <entry>
+        <title>title111</title>
+        <content type="xhtml">
+            <div xmlns="http://www.w3.org/1999/xhtml">content111</div>
+        </content>
+    </entry>
+};
 
-my $mock_atom_body = Test::MockObject->new();
-$mock_atom_body->set_bound(title => \$title);
-$mock_atom_body->set_always(content => $mock_content);
+(my $xml2 = $xml1) =~ s/111/222/g;
 
-$server = Test::MockObject::Extends->new($server);
-$server->set_always(atom_body => $mock_atom_body);
-$server->set_always(request_method => 'POST');
-$server->new_post($feed);
+my $feed = 'foo';
+my $res = dancer_response POST => "/feeds/$feed", { body => $xml1 };
+is $res->{status} => 200, 'Got 200 for posting entry1.';
 
-my $schema = $server->schema;
-my ($entry1) = $schema->resultset('AtomMQEntry')->search(
-    { title => $title, content => $content, feed_title => $feed });
+is schema->resultset('AtomMQEntry')->count() => 1, '1 entries in db.';
+is schema->resultset('AtomMQFeed')->count() => 1, '1 feed in db.';
+
+my ($entry1) = schema->resultset('AtomMQEntry')->search(
+    { title => 'title111', content => 'content111', feed_title => $feed });
 ok $entry1, 'Found entry 1.';
 
-$content = 'content2';
-$title = 'title2';
-$server->new_post($feed);
+$res = dancer_response POST => "/feeds/$feed", { body => $xml2 };
+is $res->{status} => 200, 'Got 200 for posting entry2.';
 
-my ($entry2) = $schema->resultset('AtomMQEntry')->search(
-    { title => $title, content => $content, feed_title => $feed });
+is schema->resultset('AtomMQEntry')->count() => 2, '2 entries in db.';
+is schema->resultset('AtomMQFeed')->count() => 1, '1 feed in db.';
+
+response_content_like [ GET => "/feeds/$feed" ], qr/content111/,
+    "Response has first message.";
+
+my ($entry2) = schema->resultset('AtomMQEntry')->search(
+    { title => 'title222', content => 'content222', feed_title => $feed });
 ok $entry2, 'Found entry 2.';
+ok $entry2->order_id > $entry1->order_id, 'The order_id field got incremented.';
 
-ok $entry2->order_id > $entry1->order_id, 'order_id field got incremented.';
+response_content_like [ GET => "/feeds/$feed" ], qr/content111.+content222/s,
+    "Response has both messages in order.";
 
-is $schema->resultset('AtomMQEntry')->count => 2, 'There are 2 entries';
-
-throws_ok { AtomMQ->new(feed => $feed) } qr/requires.+db_info.+or.+schema/,
-    'Correct exception for missing db_info';
+done_testing;

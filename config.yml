@@ -1,0 +1,11 @@
+appname: "AtomMQ"
+charset: "UTF-8"
+
+page_size: 100
+
+plugins:
+    DBIC:
+        atommq:
+            schema_class: "AtomMQ::Schema"
+            dsn: "dbi:mysql:database=atommq"
+            user: root
