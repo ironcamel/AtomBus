@@ -146,6 +146,10 @@ starting at the message with the given id:
 
     $ curl -H http://localhost/atommq/feed=widgets?start_at=urn:uuid:4018425e-f747-11df-b990-b7043ee4d39e
 
+Note that the most messages you will get per request is determined by the
+page_size setting.  If you do not specify a page_size setting, it defaults to
+1000.  This default may change in the future, so don't count on it.
+
 =head1 CONFIGURATION
 
 Configuration can be achieved via a config.yml file or via the set keyword.
@@ -156,6 +160,7 @@ Example config.yml:
 
     logger: file
     log: errors
+    page_size: 100
     plugins:
         DBIC:
             atommq:
@@ -164,14 +169,17 @@ Example config.yml:
                 user: joe
                 password: momma
 
-You can alternatively configure the server via the set keyword:
+You can alternatively configure the server via the 'set' keyword in the source
+code. This approach does not require a config file.
 
     use Dancer;
     use AtomMQ;
 
-    set logger => 'file';
-    set log => 'debug';
+    set logger      => 'file';
+    set log         => 'debug';
     set show_errors => 1;
+    set page_size   => 100;
+
     set plugins => {
         DBIC => {
             atommq => {

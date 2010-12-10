@@ -1,5 +1,10 @@
 Revision history for AtomMQ
 
+1.0300  2010-12-10
+        AtomMQ is now a Dancer app, hooray!
+        A bunch of junk went away now that we are using Dancer.
+        Added support for paging via the page_size setting.
+
 1.0200  2010-12-03
         Added support for max_msgs_per_request parameter and corresponding
             tests and documentation.
