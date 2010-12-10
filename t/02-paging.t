@@ -7,6 +7,7 @@ use XML::XPath;
 use Dancer qw(:syntax);
 use Dancer::Plugin::DBIC qw(schema);
 use AtomMQ;
+use Capture::Tiny qw(capture);
 
 set plugins => {
     DBIC => {
@@ -17,7 +18,7 @@ set plugins => {
     }
 };
 
-schema->deploy;
+capture { schema->deploy };
 
 my $xml = q{
     <entry>
