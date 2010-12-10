@@ -7,7 +7,6 @@ use Capture::Tiny qw(capture);
 use UUID::Tiny;
 use XML::Atom;
 $XML::Atom::DefaultVersion = '1.0';
-use XML::Atom::Person;
 
 # VERSION
 
@@ -25,18 +24,9 @@ get '/feeds/:feed_title' => sub {
     my $start_at = params->{start_at};
     my $order_id;
 
-    if ($start_after) {
-        my $entry = schema->resultset('AtomMQEntry')->find(
-            {id => $start_after});
-        return send_error("No such message exists with id $start_after", 400)
-            unless $entry;
-        $order_id = $entry->order_id;
-    }
-
-    if ($start_at) {
-        my $entry = schema->resultset('AtomMQEntry')->find(
-            {id => $start_at});
-        return send_error("No such message exists with id $start_at", 400)
+    if (my $id = $start_after || $start_at) {
+        my $entry = schema->resultset('AtomMQEntry')->find({id => $id});
+        return send_error("No such message exists with id $id", 400)
             unless $entry;
         $order_id = $entry->order_id;
     }
@@ -55,10 +45,13 @@ get '/feeds/:feed_title' => sub {
     $feed->updated($db_feed->updated);
 
     my %query = (feed_title => $feed_title);
-    $query{order_id} = { '>' => $order_id } if $order_id;
+    if ($order_id) {
+        $query{order_id} = { '>=' => $order_id } if $start_at;
+        $query{order_id} = { '>'  => $order_id } if $start_after;
+    }
     my $rset = schema->resultset('AtomMQEntry')->search(
         \%query, { order_by => ['order_id'] });
-    my $count = -1;
+    my $count = setting('page_size') || 1000;
     while ($count-- && (my $entry = $rset->next)) {
         $feed->add_entry(entry_from_db($entry));
     }
@@ -192,7 +185,7 @@ You can alternatively configure the server via the set keyword:
 
 =head1 DATABASE
 
-AtomMQ uses a database to store its data.
+AtomMQ is backed by a database.
 The dsn in the config must point to a database which you have write privileges
 to.
 The tables will be created automagically for you if they don't already exist.
@@ -203,30 +196,26 @@ which are most major databases including postgresql, sqlite, mysql and oracle.
 =head1 FastCGI
 
 AtomMQ can be run via FastCGI.
-This requires that you have the L<FCGI> module installed.
-Here is an example dispatch.fcgi:
+This requires that you have the L<FCGI> and L<Plack> modules installed.
+Here is an example FastCGI script.
+It assumes your AtomMQ server is in the file atommq.pl.
 
     #!/usr/bin/env perl
     use Dancer ':syntax';
-    use FindBin '$RealBin';
     use Plack::Handler::FCGI;
 
-    set apphandler => 'PSGI';
-    set environment => 'production';
-
-    my $app = do "$RealBin/../bin/app.pl";
+    my $app = do "/path/to/atommq.pl";
     my $server = Plack::Handler::FCGI->new(nproc => 5, detach => 1);
-
     $server->run($app);
 
-Make sure you chmod +x dispatch.fcgi.
 Here is an example lighttpd config.
+It assumes you named the above file atommq.fcgi.
 
     fastcgi.server += (
         "/atommq" => ((
             "socket" => "/tmp/fcgi.sock",
             "check-local" => "disable",
-            "bin-path" => "/path/to/AtomMQ/public/dispatch.fcgi",
+            "bin-path" => "/path/to/atommq.fcgi",
         )),
     )
 
@@ -238,9 +227,9 @@ AtomMQ can be run in a L<PSGI> environment via L<Plack>.
 You will need to have L<Plack> installed.
 To deploy AtomMQ, just run:
 
-    plackup -p 5000 /path/to/AtomMQ/bin/app.pl
+    plackup atommq.pl
 
-Now AtomMQ is running on port 5000 via the L<HTTP::Server::PSGI> web server.
+Now AtomMQ is running via the L<HTTP::Server::PSGI> web server.
 Of course you can use any PSGI/Plack web server via the -s option to plackup.
 
 =head1 MOTIVATION
