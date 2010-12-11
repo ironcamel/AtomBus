@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More import => ['!pass'], tests => 10;
+use Test::More import => ['!pass'], tests => 11;
 use Dancer::Test;
 
 use XML::XPath;
@@ -18,8 +18,6 @@ set plugins => {
     }
 };
 
-capture { schema->deploy };
-
 my $xml = q{
     <entry>
         <title>title%s</title>
@@ -27,6 +25,11 @@ my $xml = q{
             <div xmlns="http://www.w3.org/1999/xhtml">content%s</div>
         </content>
     </entry>
+};
+
+# Confirm that feed doesn't exist yet.
+capture { # Silence output from schema->deploy in before filter.
+    response_status_is [ GET => "/feeds/foo" ], 404;
 };
 
 foreach my $i (1 .. 10) {

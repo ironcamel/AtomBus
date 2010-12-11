@@ -1,6 +1,6 @@
 use strict;
 use warnings;
-use Test::More import => ['!pass'], tests => 11;
+use Test::More import => ['!pass'], tests => 12;
 use Dancer::Test;
 
 use Dancer qw(:syntax);
@@ -29,8 +29,13 @@ my $xml1 = q{
 };
 
 (my $xml2 = $xml1) =~ s/111/222/g;
-
 my $feed = 'foo';
+
+# Confirm that feed doesn't exist yet.
+capture { # Silence output from schema->deploy in before filter.
+    response_status_is [ GET => "/feeds/$feed" ], 404;
+};
+
 my $res = dancer_response POST => "/feeds/$feed", { body => $xml1 };
 is $res->{status} => 200, 'Got 200 for posting entry1.';
 
