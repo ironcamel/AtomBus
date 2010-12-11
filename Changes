@@ -1,5 +1,10 @@
 Revision history for AtomMQ
 
+1.0301  2010-12-11
+        Removing Capture::Tiny dependency. We are no longer using it to capture
+            the stdout and stderr when we deploy the schema.  It was causing
+            problems when running via FastCGI.
+
 1.0300  2010-12-10
         AtomMQ is now a Dancer app, hooray!
         A bunch of junk went away now that we are using Dancer.

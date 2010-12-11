@@ -3,7 +3,6 @@ use Dancer qw(:syntax);
 use Dancer::Plugin::DBIC qw(schema);
 
 use Atompub::DateTime qw(datetime);
-use Capture::Tiny qw(capture);
 use UUID::Tiny;
 use XML::Atom;
 $XML::Atom::DefaultVersion = '1.0';
@@ -14,7 +13,7 @@ my $deployed = 0;
 before sub {
     # Automagically create db if it doesn't exist.
     return if $deployed;
-    capture { schema->deploy };
+    eval { schema->deploy }; # Fails gracefully if tables already exist.
     $deployed = 1;
 };
 
