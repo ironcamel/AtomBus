@@ -9,6 +9,8 @@ $XML::Atom::DefaultVersion = '1.0';
 
 # VERSION
 
+set content_type => 'application/xml';
+
 my $deployed = 0;
 before sub {
     # Automagically create db if it doesn't exist.
@@ -42,6 +44,19 @@ get '/feeds/:feed_title' => sub {
     $person->name($db_feed->author_name);
     $feed->author($person);
     $feed->updated($db_feed->updated);
+    
+    my $self_link = XML::Atom::Link->new;
+    $self_link->rel('self');
+    $self_link->type('application/atom+xml');
+    $self_link->href(request->base . request->path_info);
+    $feed->add_link($self_link);
+
+    my $hub_link = XML::Atom::Link->new;
+    $hub_link->rel('hub');
+    #$hub_link->href('http://rackspacedev.superfeedr.com/');
+    #$hub_link->href('http://184.106.189.98:8080');
+    $hub_link->href('http://184.106.189.98:8080/publish');
+    $feed->add_link($hub_link);
 
     my %query = (feed_title => $feed_title);
     if ($order_id) {
@@ -80,6 +95,14 @@ post '/feeds/:feed_title' => sub {
     });
     $db_feed->update({updated => $updated});
     return entry_from_db($db_entry)->as_xml;
+};
+
+any '/hub_callback' => sub {
+    debug 'callback: ' . to_dumper scalar params;
+    debug 'method: ' . request->method;
+    debug 'body: ' . request->body;
+    content_type 'text/plain';
+    return params->{'hub.challenge'};
 };
 
 sub gen_id { 'urn:uuid:' . create_UUID_as_string() }
