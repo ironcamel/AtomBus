@@ -1,5 +1,8 @@
 Revision history for AtomMQ
 
+1.0401  2010-12-28
+        Just some POD fixes.
+
 1.0400  2010-12-28
         Added support for ETags. Behaves as recommended by pubsubhubbub:
             http://code.google.com/p/pubsubhubbub/wiki/PublisherEfficiency

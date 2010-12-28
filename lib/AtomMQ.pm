@@ -129,7 +129,7 @@ sub _entry_from_db {
 
 sub _add_etag { header ETag => qq("$_[0]") }
 
-# ABSTRACT: An atompub server that supports the message queue/bus model.
+# ABSTRACT: An AtomPub server for messaging.
 
 =head1 SYNOPSIS
 
@@ -144,7 +144,7 @@ It is also a pubsubhubbub friendly publisher.
 The idea is that atom feeds can correspond to conceptual queues or buses.
 AtomMQ is built on top of the L<Dancer> framework.
 
-These examples assume that you have configured your web server to point http
+These examples assume that you have configured your web server to point HTTP
 requests starting with /atommq to your AtomMQ server (see L</Deployment>).
 To publish an entry, make a HTTP POST request:
 
@@ -174,7 +174,7 @@ The server responds with an ETag header for each request.
 The client can provide that ETag as the If-None-Match header.
 The following example will work the same as if the client provided a start_after
 parameter.
-Except that it will return an empty body and a 304 status if there are new
+Except that it will return an empty body and a 304 status if there are no new
 entries.
 This is the behavior that pubsubhubbub recommends
 L<http://code.google.com/p/pubsubhubbub/wiki/PublisherEfficiency>.
@@ -193,7 +193,7 @@ This is because a message consumer will most likely want to consume messages
 in the order that they were published.
 In the future, a config setting may be available to reverse the order.
 
-=head1 Configuration
+=head1 CONFIGURATION
 
 Configuration can be achieved via a config.yml file or via the set keyword.
 To use the config.yml approach, you will need to install L<YAML>.
@@ -233,7 +233,7 @@ code. This approach does not require a config file.
 
     dance;
 
-=head1 Database
+=head1 DATABASE
 
 AtomMQ is backed by a database.
 The dsn in the config must point to a database which you have write privileges
@@ -243,10 +243,12 @@ Of course that requires create table privileges.
 All databases supported by L<DBIx::Class> are supported,
 which are most major databases including postgresql, sqlite, mysql and oracle.
 
-=head1 Deployment
-AtomMQ is a L<PSGI> application so, deployment is very flexible.
+=head1 DEPLOYMENT
+
+Deployment is very flexible.
 It can be run on a web server via CGI or FastCGI.
 It can also be run on any L<Plack> web server.
+See L<Dancer::Deployment> for more details.
 
 =head2 FastCGI
 
@@ -287,7 +289,7 @@ To deploy AtomMQ, just run:
 Now AtomMQ is running via the L<HTTP::Server::PSGI> web server.
 Of course you can use any PSGI/Plack web server via the -s option to plackup.
 
-=head1 Motivation
+=head1 MOTIVATION
 
 I like messaging systems because they make it so easy to create scalable
 applications.
