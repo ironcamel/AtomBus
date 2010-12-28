@@ -1,9 +1,7 @@
-use strict;
-use warnings;
 use Test::More import => ['!pass'], tests => 12;
+use Dancer qw(:syntax);
 use Dancer::Test;
 
-use Dancer qw(:syntax);
 use Dancer::Plugin::DBIC qw(schema);
 use AtomMQ;
 use Capture::Tiny qw(capture);
@@ -11,13 +9,10 @@ use Capture::Tiny qw(capture);
 set plugins => {
     DBIC => {
         atommq => {
-            schema_class => 'AtomMQ::Schema',
             dsn => 'dbi:SQLite:dbname=:memory:',
         }
     }
 };
-
-capture { schema->deploy };
 
 my $xml1 = q{
     <entry>

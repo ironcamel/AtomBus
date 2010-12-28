@@ -1,5 +1,10 @@
 Revision history for AtomMQ
 
+1.0400  2010-12-28
+        Added support for ETags. Behaves as recommended by pubsubhubbub:
+            http://code.google.com/p/pubsubhubbub/wiki/PublisherEfficiency
+        No longer require user to set schema_class config value.
+
 1.0301  2010-12-11
         Fixed a bug that breaks app in FCGI environment if Capture::Tiny
         is used inside the before filter to silence deploying the schema.

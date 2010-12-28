@@ -1,10 +1,8 @@
-use strict;
-use warnings;
-use Test::More import => ['!pass'], tests => 11;
+use Test::More import => ['!pass'], tests => 17;
+use Dancer qw(:syntax);
 use Dancer::Test;
 
 use XML::XPath;
-use Dancer qw(:syntax);
 use Dancer::Plugin::DBIC qw(schema);
 use AtomMQ;
 use Capture::Tiny qw(capture);
@@ -12,7 +10,6 @@ use Capture::Tiny qw(capture);
 set plugins => {
     DBIC => {
         atommq => {
-            schema_class => 'AtomMQ::Schema',
             dsn => 'dbi:SQLite:dbname=:memory:',
         }
     }
@@ -38,6 +35,7 @@ foreach my $i (1 .. 10) {
 my $res = dancer_response GET => "/feeds/foo";
 my $xp = XML::XPath->new(xml => $res->{content});
 my @entries = $xp->findnodes('/feed/entry');
+is $res->{status}=> 200, 'Status was 200';
 is @entries => 10, 'There are 10 entries';
 is_deeply
     [ map $_->findvalue('./content/div'), @entries ],
@@ -63,12 +61,34 @@ is_deeply
     [ map "content$_", 6 .. 10 ],
     "All 5 entries are in order.";
 
+$res = dancer_response GET => "/feeds/foo",
+    { headers => [ 'If-None-Match' => $id ] };
+$xp = XML::XPath->new(xml => $res->{content});
+@entries = $xp->findnodes('/feed/entry');
+is @entries => 5, 'Got 5 entries when If-None-Match is 5th element.';
+is_deeply
+    [ map $_->findvalue('./content/div'), @entries ],
+    [ map "content$_", 6 .. 10 ],
+    "All 5 entries are in order.";
+
+$res = dancer_response GET => "/feeds/foo",
+    { headers => [ 'If-None-Match' => 'foo' ] };
+$xp = XML::XPath->new(xml => $res->{content});
+@entries = $xp->findnodes('/feed/entry');
+is @entries => 10, 'Got all entries when If-None-Match is an unkown id.';
+
+$id = $entries[-1]->find('./id'); # this is the last entry
+$res = dancer_response GET => "/feeds/foo",
+    { headers => [ 'If-None-Match' => $id] };
+is $res->{status}, 304, "Status is 304 when If-None-Match is the last id";
+is $res->{content}, '', "Body is empty when If-None-Match is the last id";
+
 set page_size => 7;
 
 $res = dancer_response GET => "/feeds/foo";
 $xp = XML::XPath->new(xml => $res->{content});
 @entries = $xp->findnodes('/feed/entry');
-is @entries => 7, 'There are 7 entries with paging on.';
+is @entries => 7, 'There are 7 entries with page_size = 7.';
 is_deeply
     [ map $_->findvalue('./content/div'), @entries ],
     [ map "content$_", 1 .. 7 ],
