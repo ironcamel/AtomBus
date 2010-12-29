@@ -145,7 +145,7 @@ The idea is that atom feeds can correspond to conceptual queues or buses.
 AtomMQ is built on top of the L<Dancer> framework.
 
 These examples assume that you have configured your web server to point HTTP
-requests starting with /atommq to your AtomMQ server (see L</Deployment>).
+requests starting with /atommq to your AtomMQ server (see L</DEPLOYMENT>).
 To publish an entry, make a HTTP POST request:
 
     $ curl -d '<entry> <title>allo</title> <content type="xhtml">
@@ -162,12 +162,12 @@ Clients can request only entries that came after the last entry they processed.
 They can do this by providing the id of the last message as the start_after
 parameter:
 
-    $ curl -H http://localhost/atommq/feeds/widgets?start_after=42
+    $ curl http://localhost/atommq/feeds/widgets?start_after=42
 
 Alternatively, you can provide a start_at param.  This will retrieve entries
 starting with the given id:
 
-    $ curl -H http://localhost/atommq/feeds/widgets?start_at=42
+    $ curl http://localhost/atommq/feeds/widgets?start_at=42
 
 HTTP ETags are also supported.
 The server responds with an ETag header for each request.
@@ -210,7 +210,7 @@ Example config.yml:
             atommq:
                 dsn: 'dbi:mysql:database=atommq'
                 user: joe
-                password: momma
+                pass: momma
 
 You can alternatively configure the server via the 'set' keyword in the source
 code. This approach does not require a config file.
@@ -278,16 +278,13 @@ It assumes you named the above file atommq.fcgi.
 
 Now AtomMQ will be running via FastCGI under /atommq.
 
-=head2 PSGI
+=head2 Plack
 
-AtomMQ can be run in a L<PSGI> environment via L<Plack>.
-You will need to have L<Plack> installed.
-To deploy AtomMQ, just run:
+AtomMQ can be run with any L<Plack> web server.  Just run:
 
     plackup atommq.pl
 
-Now AtomMQ is running via the L<HTTP::Server::PSGI> web server.
-Of course you can use any PSGI/Plack web server via the -s option to plackup.
+You can change the Plack web server via the -s option to plackup.
 
 =head1 MOTIVATION
 

@@ -1,5 +1,9 @@
 Revision history for AtomMQ
 
+1.0402  2010-12-29
+        The example config in the POD was incorrectly setting password instead
+            of pass.
+
 1.0401  2010-12-28
         Just some POD fixes.
 
