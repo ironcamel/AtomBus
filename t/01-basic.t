@@ -3,12 +3,12 @@ use Dancer qw(:syntax);
 use Dancer::Test;
 
 use Dancer::Plugin::DBIC qw(schema);
-use AtomMQ;
+use AtomBus;
 use Capture::Tiny qw(capture);
 
 set plugins => {
     DBIC => {
-        atommq => {
+        atombus => {
             dsn => 'dbi:SQLite:dbname=:memory:',
         }
     }
@@ -34,23 +34,23 @@ capture { # Silence output from schema->deploy in before filter.
 my $res = dancer_response POST => "/feeds/$feed", { body => $xml1 };
 is $res->{status} => 200, 'Got 200 for posting entry1.';
 
-is schema->resultset('AtomMQEntry')->count() => 1, '1 entries in db.';
-is schema->resultset('AtomMQFeed')->count() => 1, '1 feed in db.';
+is schema->resultset('AtomBusEntry')->count() => 1, '1 entries in db.';
+is schema->resultset('AtomBusFeed')->count() => 1, '1 feed in db.';
 
-my ($entry1) = schema->resultset('AtomMQEntry')->search(
+my ($entry1) = schema->resultset('AtomBusEntry')->search(
     { title => 'title111', content => 'content111', feed_title => $feed });
 ok $entry1, 'Found entry 1.';
 
 $res = dancer_response POST => "/feeds/$feed", { body => $xml2 };
 is $res->{status} => 200, 'Got 200 for posting entry2.';
 
-is schema->resultset('AtomMQEntry')->count() => 2, '2 entries in db.';
-is schema->resultset('AtomMQFeed')->count() => 1, '1 feed in db.';
+is schema->resultset('AtomBusEntry')->count() => 2, '2 entries in db.';
+is schema->resultset('AtomBusFeed')->count() => 1, '1 feed in db.';
 
 response_content_like [ GET => "/feeds/$feed" ], qr/content111/,
     "Response has first message.";
 
-my ($entry2) = schema->resultset('AtomMQEntry')->search(
+my ($entry2) = schema->resultset('AtomBusEntry')->search(
     { title => 'title222', content => 'content222', feed_title => $feed });
 ok $entry2, 'Found entry 2.';
 ok $entry2->order_id > $entry1->order_id, 'The order_id field got incremented.';

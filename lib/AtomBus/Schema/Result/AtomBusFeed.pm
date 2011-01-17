@@ -1,9 +1,9 @@
-package AtomMQ::Schema::Result::AtomMQFeed;
+package AtomBus::Schema::Result::AtomBusFeed;
 use strict;
 use warnings;
 use base 'DBIx::Class::Core';
 
-__PACKAGE__->table("atommq_feed");
+__PACKAGE__->table("atombus_feed");
 
 __PACKAGE__->add_columns(
   id =>           { data_type => "varchar", is_nullable => 0, size => 100 },
@@ -16,15 +16,15 @@ __PACKAGE__->set_primary_key("id");
 __PACKAGE__->add_unique_constraint("title_unique", ["title"]);
 
 __PACKAGE__->has_many(
-  "atommq_entries",
-  "AtomMQ::Schema::Result::AtomMQEntry",
+  "atombus_entries",
+  "AtomBus::Schema::Result::AtomBusEntry",
   { "foreign.feed_title" => "self.title" },
   { cascade_copy => 0, cascade_delete => 0 },
 );
 
 =head1 NAME
 
-AtomMQ::Schema::Result::AtomMQFeed
+AtomBus::Schema::Result::AtomBusFeed
 
 =head1 ACCESSORS
 
@@ -60,11 +60,11 @@ AtomMQ::Schema::Result::AtomMQFeed
 
 =head1 RELATIONS
 
-=head2 atommq_entries
+=head2 atombus_entries
 
 Type: has_many
 
-Related object: L<AtomMQ::Schema::Result::AtomMQEntry>
+Related object: L<AtomBus::Schema::Result::AtomBusEntry>
 
 =cut
 

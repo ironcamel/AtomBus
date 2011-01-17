@@ -1,9 +1,9 @@
-package AtomMQ::Schema::Result::AtomMQEntry;
+package AtomBus::Schema::Result::AtomBusEntry;
 use strict;
 use warnings;
 use base 'DBIx::Class::Core';
 
-__PACKAGE__->table("atommq_entry");
+__PACKAGE__->table("atombus_entry");
 
 __PACKAGE__->add_columns(
   order_id     => { data_type => "integer", is_nullable => 0,
@@ -22,14 +22,14 @@ __PACKAGE__->add_unique_constraint("id_unique", ["id"]);
 
 __PACKAGE__->belongs_to(
   "feed_title",
-  "AtomMQ::Schema::Result::AtomMQFeed",
+  "AtomBus::Schema::Result::AtomBusFeed",
   { title => "feed_title" },
   { is_deferrable => 1, on_delete => "CASCADE", on_update => "CASCADE" },
 );
 
 =head1 NAME
 
-AtomMQ::Schema::Result::AtomMQEntry
+AtomBus::Schema::Result::AtomBusEntry
 
 =head1 ACCESSORS
 
@@ -86,7 +86,7 @@ AtomMQ::Schema::Result::AtomMQEntry
 
 Type: belongs_to
 
-Related object: L<AtomMQ::Schema::Result::AtomMQFeed>
+Related object: L<AtomBus::Schema::Result::AtomBusFeed>
 
 =cut
 

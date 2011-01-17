@@ -1,4 +1,7 @@
-Revision history for AtomMQ
+Revision history for AtomBus
+
+1.0403  2010-12-29
+        Renaming AtomMQ to AtomBus.
 
 1.0402  2010-12-29
         The example config in the POD was incorrectly setting password instead

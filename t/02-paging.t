@@ -4,12 +4,12 @@ use Dancer::Test;
 
 use XML::XPath;
 use Dancer::Plugin::DBIC qw(schema);
-use AtomMQ;
+use AtomBus;
 use Capture::Tiny qw(capture);
 
 set plugins => {
     DBIC => {
-        atommq => {
+        atombus => {
             dsn => 'dbi:SQLite:dbname=:memory:',
         }
     }

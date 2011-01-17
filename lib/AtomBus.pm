@@ -1,4 +1,4 @@
-package AtomMQ;
+package AtomBus;
 use Dancer qw(:syntax);
 use Dancer::Plugin::DBIC qw(schema);
 
@@ -13,7 +13,7 @@ set content_type => 'application/xml';
 
 my $deployed = 0;
 before sub {
-    config->{plugins}{DBIC}{atommq}{schema_class} = 'AtomMQ::Schema';
+    config->{plugins}{DBIC}{atombus}{schema_class} = 'AtomBus::Schema';
     # Automagically create db if it doesn't exist.
     if (not $deployed++) {
         eval { schema->deploy }; # Fails gracefully if tables already exist.
@@ -29,17 +29,17 @@ get '/feeds/:feed_title' => sub {
 
     if (my $id = $if_none_match) {
         $id =~ s/^"(.*)"$/$1/; # Remove surrounding quotes
-        my $entry = schema->resultset('AtomMQEntry')->find({id => $id});
+        my $entry = schema->resultset('AtomBusEntry')->find({id => $id});
         $order_id = $entry->order_id if $entry;
     }
     if (my $id = $start_after || $start_at) {
-        my $entry = schema->resultset('AtomMQEntry')->find({id => $id});
+        my $entry = schema->resultset('AtomBusEntry')->find({id => $id});
         return send_error("No such message exists with id $id", 400)
             unless $entry;
         $order_id = $entry->order_id;
     }
 
-    my $db_feed = schema->resultset('AtomMQFeed')->find(
+    my $db_feed = schema->resultset('AtomBusFeed')->find(
         { title => $feed_title });
     return send_error("No such feed exists named $feed_title", 404)
         unless $db_feed;
@@ -69,7 +69,7 @@ get '/feeds/:feed_title' => sub {
         $query{order_id} = { '>'  => $order_id } if $start_after;
         $query{order_id} = { '>=' => $order_id } if $start_at;
     }
-    my $rset = schema->resultset('AtomMQEntry')->search(
+    my $rset = schema->resultset('AtomBusEntry')->search(
         \%query, { order_by => ['order_id'] });
     my $count = setting('page_size') || 1000;
     my $last_id;
@@ -97,13 +97,13 @@ post '/feeds/:feed_title' => sub {
         unless $body;
     my $entry = XML::Atom::Entry->new(\$body);
     my $updated = datetime->w3cz;
-    my $db_feed = schema->resultset('AtomMQFeed')->find_or_create({
+    my $db_feed = schema->resultset('AtomBusFeed')->find_or_create({
         title       => $feed_title,
         id          => _gen_id(),
-        author_name => 'AtomMQ',
+        author_name => 'AtomBus',
         updated     => $updated,
     }, { key => 'title_unique' });
-    my $db_entry = schema->resultset('AtomMQEntry')->create({
+    my $db_entry = schema->resultset('AtomBusEntry')->create({
         feed_title => $feed_title,
         id         => _gen_id(),
         title      => $entry->title,
@@ -134,40 +134,40 @@ sub _add_etag { header ETag => qq("$_[0]") }
 =head1 SYNOPSIS
 
     use Dancer;
-    use AtomMQ;
+    use AtomBus;
     dance;
 
 =head1 DESCRIPTION
 
-AtomMQ is an AtomPub server that can be used for messaging.
+AtomBus is an AtomPub server that can be used for messaging.
 It is also a pubsubhubbub friendly publisher.
 The idea is that atom feeds can correspond to conceptual queues or buses.
-AtomMQ is built on top of the L<Dancer> framework.
+AtomBus is built on top of the L<Dancer> framework.
 
 These examples assume that you have configured your web server to point HTTP
-requests starting with /atommq to your AtomMQ server (see L</DEPLOYMENT>).
+requests starting with /atombus to your AtomBus server (see L</DEPLOYMENT>).
 To publish an entry, make a HTTP POST request:
 
     $ curl -d '<entry> <title>allo</title> <content type="xhtml">
       <div xmlns="http://www.w3.org/1999/xhtml" >an important message</div>
-      </content> </entry>' http://localhost/atommq/feeds/widgets
+      </content> </entry>' http://localhost/atombus/feeds/widgets
 
 That adds a new entry to a feed titled widgets.
 If that feed didn't exist before, it will be created for you.
 To retrieve the widgets feed, make a HTTP GET request:
 
-    $ curl http://localhost/atommq/feeds/widgets
+    $ curl http://localhost/atombus/feeds/widgets
 
 Clients can request only entries that came after the last entry they processed.
 They can do this by providing the id of the last message as the start_after
 parameter:
 
-    $ curl http://localhost/atommq/feeds/widgets?start_after=42
+    $ curl http://localhost/atombus/feeds/widgets?start_after=42
 
 Alternatively, you can provide a start_at param.  This will retrieve entries
 starting with the given id:
 
-    $ curl http://localhost/atommq/feeds/widgets?start_at=42
+    $ curl http://localhost/atombus/feeds/widgets?start_at=42
 
 HTTP ETags are also supported.
 The server responds with an ETag header for each request.
@@ -179,13 +179,13 @@ entries.
 This is the behavior that pubsubhubbub recommends
 L<http://code.google.com/p/pubsubhubbub/wiki/PublisherEfficiency>.
 
-    $ curl -H 'If-None-Match: "42"' http://localhost/atommq/feeds/widgets
+    $ curl -H 'If-None-Match: "42"' http://localhost/atombus/feeds/widgets
 
 Note that the most messages you will get per request is determined by the
 page_size setting.  If you do not specify a page_size setting, it defaults to
 1000.  This default may change in the future, so don't count on it.
 
-AtomMQ is mostly a proper implementation of the AtomPub protocol and will
+AtomBus is mostly a proper implementation of the AtomPub protocol and will
 validate 100% against L<http://validator.w3.org/feed>.
 One point where it diverges from the AtomPub spec is that feed entries are
 returned in fifo order.
@@ -207,8 +207,8 @@ Example config.yml:
     page_size: 100
     plugins:
         DBIC:
-            atommq:
-                dsn: 'dbi:mysql:database=atommq'
+            atombus:
+                dsn: 'dbi:mysql:database=atombus'
                 user: joe
                 pass: momma
 
@@ -216,7 +216,7 @@ You can alternatively configure the server via the 'set' keyword in the source
 code. This approach does not require a config file.
 
     use Dancer;
-    use AtomMQ;
+    use AtomBus;
 
     set logger      => 'file';
     set log         => 'debug';
@@ -225,8 +225,8 @@ code. This approach does not require a config file.
 
     set plugins => {
         DBIC => {
-            atommq => {
-                dsn => 'dbi:SQLite:dbname=/var/local/atommq/atommq.db',
+            atombus => {
+                dsn => 'dbi:SQLite:dbname=/var/local/atombus/atombus.db',
             }
         }
     };
@@ -235,7 +235,7 @@ code. This approach does not require a config file.
 
 =head1 DATABASE
 
-AtomMQ is backed by a database.
+AtomBus is backed by a database.
 The dsn in the config must point to a database which you have write privileges
 to.
 The tables will be created automagically for you if they don't already exist.
@@ -252,37 +252,37 @@ See L<Dancer::Deployment> for more details.
 
 =head2 FastCGI
 
-AtomMQ can be run via FastCGI.
+AtomBus can be run via FastCGI.
 This requires that you have the L<FCGI> and L<Plack> modules installed.
 Here is an example FastCGI script.
-It assumes your AtomMQ server is in the file atommq.pl.
+It assumes your AtomBus server is in the file atombus.pl.
 
     #!/usr/bin/env perl
     use Dancer ':syntax';
     use Plack::Handler::FCGI;
 
-    my $app = do "/path/to/atommq.pl";
+    my $app = do "/path/to/atombus.pl";
     my $server = Plack::Handler::FCGI->new(nproc => 5, detach => 1);
     $server->run($app);
 
 Here is an example lighttpd config.
-It assumes you named the above file atommq.fcgi.
+It assumes you named the above file atombus.fcgi.
 
     fastcgi.server += (
-        "/atommq" => ((
+        "/atombus" => ((
             "socket" => "/tmp/fcgi.sock",
             "check-local" => "disable",
-            "bin-path" => "/path/to/atommq.fcgi",
+            "bin-path" => "/path/to/atombus.fcgi",
         )),
     )
 
-Now AtomMQ will be running via FastCGI under /atommq.
+Now AtomBus will be running via FastCGI under /atombus.
 
 =head2 Plack
 
-AtomMQ can be run with any L<Plack> web server.  Just run:
+AtomBus can be run with any L<Plack> web server.  Just run:
 
-    plackup atommq.pl
+    plackup atombus.pl
 
 You can change the Plack web server via the -s option to plackup.
 
@@ -299,16 +299,16 @@ So I really needed a message bus, not a message queue.
 I could for example have used something called topics in ActiveMQ,
 but I have found ActiveMQ to be broken in general.
 An instance I manage has to be restarted daily.
-AtomMQ on the other hand will be extremely stable, because it is so simple.
+AtomBus on the other hand will be extremely stable, because it is so simple.
 It is in essence just a simple interface to a database.
-As long as your database and web server are up, AtomMQ will be there for you.
+As long as your database and web server are up, AtomBus will be there for you.
 And there are many ways to add redundancy to databases and web heads.
-Another advantage of using AtomMQ is that Atom is a well known standard.
+Another advantage of using AtomBus is that Atom is a well known standard.
 Everyone already has a client for it, their browser.
 Aren't standards great!  
 By the way, if you just need message queues, try
 L<POE::Component::MessageQueue>.
-It rocks. If you need a message bus, give AtomMQ a shot.
+It rocks. If you need a message bus, give AtomBus a shot.
 
 =cut
 
