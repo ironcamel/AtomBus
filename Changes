@@ -1,5 +1,9 @@
 Revision history for AtomBus
 
+1.0404  2010-12-29
+        Making configuration more friendly. All AtomBus specific settings
+            should now be under the 'atombus' config setting.
+
 1.0403  2010-12-29
         Renaming AtomMQ to AtomBus.
 

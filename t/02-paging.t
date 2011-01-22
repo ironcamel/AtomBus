@@ -7,11 +7,9 @@ use Dancer::Plugin::DBIC qw(schema);
 use AtomBus;
 use Capture::Tiny qw(capture);
 
-set plugins => {
-    DBIC => {
-        atombus => {
-            dsn => 'dbi:SQLite:dbname=:memory:',
-        }
+set atombus => {
+    db => {
+        dsn => 'dbi:SQLite:dbname=:memory:',
     }
 };
 
@@ -83,7 +81,7 @@ $res = dancer_response GET => "/feeds/foo",
 is $res->{status}, 304, "Status is 304 when If-None-Match is the last id";
 is $res->{content}, '', "Body is empty when If-None-Match is the last id";
 
-set page_size => 7;
+config->{atombus}{page_size} = 7;
 
 $res = dancer_response GET => "/feeds/foo";
 $xp = XML::XPath->new(xml => $res->{content});

@@ -6,11 +6,9 @@ use Dancer::Plugin::DBIC qw(schema);
 use AtomBus;
 use Capture::Tiny qw(capture);
 
-set plugins => {
-    DBIC => {
-        atombus => {
-            dsn => 'dbi:SQLite:dbname=:memory:',
-        }
+set atombus => {
+    db => {
+        dsn => 'dbi:SQLite:dbname=:memory:',
     }
 };
 
