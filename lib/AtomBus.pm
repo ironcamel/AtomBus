@@ -113,6 +113,7 @@ post '/feeds/:feed_title' => sub {
     });
     $db_feed->update({updated => $updated});
     _add_etag($db_entry->id);
+    header Location => uri_for( '/feeds/' . $feed_title, { start_at => $db_entry->id } );
     content_type 'application/atom+xml;type=entry';
     status 'created';
     return _entry_from_db($db_entry)->as_xml;
