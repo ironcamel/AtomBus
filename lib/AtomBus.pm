@@ -113,6 +113,7 @@ post '/feeds/:feed_title' => sub {
     });
     $db_feed->update({updated => $updated});
     _add_etag($db_entry->id);
+    status 'created';
     return _entry_from_db($db_entry)->as_xml;
 };
 
