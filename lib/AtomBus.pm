@@ -141,7 +141,7 @@ post '/feeds/:feed_title' => sub {
     $db_feed->update({updated => $updated});
     $entry = _entry_from_db($db_entry);
     _add_etag($entry->id);
-    header Location => $entry->link;
+    header Location => $entry->link->href;
     content_type 'application/atom+xml;type=entry';
     status 'created';
     return $entry->as_xml;
