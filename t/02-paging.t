@@ -1,7 +1,8 @@
-use Test::More import => ['!pass'], tests => 17;
+use Test::More import => ['!pass'], tests => 21;
 use Dancer qw(:syntax);
 use Dancer::Test;
 
+use URI;
 use XML::XPath;
 use Dancer::Plugin::DBIC qw(schema);
 use AtomBus;
@@ -27,10 +28,24 @@ capture { # Silence output from schema->deploy in before filter.
     response_status_is [ GET => "/feeds/foo" ], 404;
 };
 
-foreach my $i (1 .. 10) {
+# Create one entry and examine result.
+my $res = dancer_response POST => "/feeds/foo", { body => sprintf($xml, 1, 1) };
+is $res->{status}=> 201, 'Status was 201';
+my $etag = new URI($res->{headers}->{etag}, 'urn');
+my $location = new URI($res->{headers}->{location}, 'http');
+my $id_nss = $location;
+($id_nss) =~ s,^.*/,,;
+is $location->path => "/feeds/foo/entries/$id_nss", 'Location header is well-structured.';
+is $etag->as_string => "urn:uuid:$id_nss", 'ETag was contained in location header.';
+$res = dancer_response GET => $location->path;
+is $res->{status}=> 200, 'Entry was GETtable with status 200';
+
+# Create additional entries.
+foreach my $i (2 .. 10) {
     dancer_response POST => "/feeds/foo", { body => sprintf($xml, $i, $i) };
 }
-my $res = dancer_response GET => "/feeds/foo";
+
+$res = dancer_response GET => "/feeds/foo";
 my $xp = XML::XPath->new(xml => $res->{content});
 my @entries = $xp->findnodes('/feed/entry');
 is $res->{status}=> 200, 'Status was 200';
