@@ -185,7 +185,7 @@ It is also pubsubhubbub friendly.
 
 These examples assume that you have configured your web server to point HTTP
 requests starting with /atombus to your AtomBus server (see L</DEPLOYMENT>).
-To publish an entry, make a HTTP POST request:
+To publish an entry, make an HTTP POST request:
 
     $ curl -d '<entry> <title>allo</title> <content type="xhtml">
       <div xmlns="http://www.w3.org/1999/xhtml" >an important message</div>
@@ -193,7 +193,7 @@ To publish an entry, make a HTTP POST request:
 
 That adds a new entry to a feed titled widgets.
 If that feed didn't exist before, it will be created for you.
-To retrieve the widgets feed, make a HTTP GET request:
+To retrieve the widgets feed, make an HTTP GET request:
 
     $ curl http://localhost/atombus/feeds/widgets
 
