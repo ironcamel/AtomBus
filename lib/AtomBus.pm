@@ -21,7 +21,7 @@ before sub {
     }
 };
 
-get '/entries/:entry_id' => sub {
+get '/feeds/:feed_title/entries/:entry_id' => sub {
     my $entry_id = 'urn:uuid:' . params->{entry_id};
     my $db_entry = schema->resultset('AtomBusEntry')->find({id => $entry_id});
     return send_error("No such message exists", 404)
@@ -161,7 +161,7 @@ sub _entry_from_db {
     my $self_link = XML::Atom::Link->new;
     $self_link->rel('self');
     $self_link->type('application/atom+xml');
-    $self_link->href( join( '/', uri_for('/entries'), _id_nss($row->id) ));
+    $self_link->href( join( '/', uri_for('/feeds'), $entry->title, '/entries', _id_nss($row->id) ));
     $entry->add_link($self_link);
     return $entry;
 }
