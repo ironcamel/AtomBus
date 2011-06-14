@@ -161,7 +161,7 @@ sub _entry_from_db {
     my $self_link = XML::Atom::Link->new;
     $self_link->rel('self');
     $self_link->type('application/atom+xml');
-    $self_link->href( join( '/', uri_for('/feeds'), $entry->title, '/entries', _id_nss($row->id) ));
+    $self_link->href( join( '/', uri_for('/feeds'), $row->feed_title->title, 'entries', _id_nss($row->id) ));
     $entry->add_link($self_link);
     return $entry;
 }
