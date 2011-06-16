@@ -21,6 +21,33 @@ before sub {
     }
 };
 
+get '/feeds/:feed_title/entries/:entry_id' => sub {
+    my $entry_id = 'urn:uuid:' . params->{entry_id};
+    my $db_entry = schema->resultset('AtomBusEntry')->find({id => $entry_id});
+    return send_error("No such message exists", 404)
+        unless $db_entry;
+    my $if_none_match = request->header('If-None-Match');
+#TODO: support revised entries (i.e. Atompub PUT)
+#    my $revision_id = $db_entry->revision_id || $db_entry->id;
+    my $revision_id = $db_entry->id;
+
+    # If ETag matches current revision id of entry
+    if (my $id = $if_none_match) {
+        $id =~ s/^"(.*)"$/$1/; # Remove surrounding quotes
+        if ($revision_id eq $id) {
+            status 304;
+            return '';
+        }
+    }
+
+    my $entry = _entry_from_db($db_entry);
+
+    _add_etag($revision_id);
+    header Vary => 'If-None-Match';
+
+    return $entry->as_xml;
+};
+
 get '/feeds/:feed_title' => sub {
     my $feed_title = lc params->{feed_title};
     my $start_after = params->{start_after};
@@ -112,11 +139,17 @@ post '/feeds/:feed_title' => sub {
         updated    => $updated,
     });
     $db_feed->update({updated => $updated});
-    _add_etag($db_entry->id);
-    return _entry_from_db($db_entry)->as_xml;
+    $entry = _entry_from_db($db_entry);
+    _add_etag($entry->id);
+    header Location => $entry->link->href;
+    content_type 'application/atom+xml;type=entry';
+    status 'created';
+    return $entry->as_xml;
 };
 
 sub _gen_id { 'urn:uuid:' . create_UUID_as_string() }
+
+sub _id_nss { $_ = shift; s/^urn:uuid://; return $_ }
 
 sub _entry_from_db {
     my $row = shift;
@@ -125,6 +158,11 @@ sub _entry_from_db {
     $entry->content($row->content);
     $entry->id($row->id);
     $entry->updated($row->updated);
+    my $self_link = XML::Atom::Link->new;
+    $self_link->rel('self');
+    $self_link->type('application/atom+xml');
+    $self_link->href( join( '/', uri_for('/feeds'), $row->feed_title->title, 'entries', _id_nss($row->id) ));
+    $entry->add_link($self_link);
     return $entry;
 }
 

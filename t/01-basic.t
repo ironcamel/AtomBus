@@ -30,7 +30,7 @@ capture { # Silence output from schema->deploy in before filter.
 };
 
 my $res = dancer_response POST => "/feeds/$feed", { body => $xml1 };
-is $res->{status} => 200, 'Got 200 for posting entry1.';
+is $res->{status} => 201, 'Got 201 for posting entry1.';
 
 is schema->resultset('AtomBusEntry')->count() => 1, '1 entries in db.';
 is schema->resultset('AtomBusFeed')->count() => 1, '1 feed in db.';
@@ -40,7 +40,7 @@ my ($entry1) = schema->resultset('AtomBusEntry')->search(
 ok $entry1, 'Found entry 1.';
 
 $res = dancer_response POST => "/feeds/$feed", { body => $xml2 };
-is $res->{status} => 200, 'Got 200 for posting entry2.';
+is $res->{status} => 201, 'Got 201 for posting entry2.';
 
 is schema->resultset('AtomBusEntry')->count() => 2, '2 entries in db.';
 is schema->resultset('AtomBusFeed')->count() => 1, '1 feed in db.';
