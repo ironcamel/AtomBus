@@ -79,7 +79,7 @@ get '/feeds/:feed_title' => sub {
     $person->name($db_feed->author_name);
     $feed->author($person);
     $feed->updated($db_feed->updated);
-    
+
     my $self_link = XML::Atom::Link->new;
     $self_link->rel('self');
     $self_link->type('application/atom+xml');
@@ -344,7 +344,7 @@ As long as your database and web server are up, AtomBus will be there for you.
 And there are many ways to add redundancy to databases and web heads.
 Another advantage of using AtomBus is that Atom is a well known standard.
 Everyone already has a client for it, their browser.
-Aren't standards great!  
+Aren't standards great!
 By the way, if you just need message queues, try
 L<POE::Component::MessageQueue>.
 It rocks. If you need a message bus, give AtomBus a shot.
