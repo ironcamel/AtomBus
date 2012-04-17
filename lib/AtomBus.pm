@@ -10,16 +10,9 @@ $XML::Atom::DefaultVersion = '1.0';
 # VERSION
 
 set content_type => 'application/xml';
-
-my $deployed = 0;
-before sub {
-    config->{plugins}{DBIC}{atombus} = config->{atombus}{db};
-    config->{plugins}{DBIC}{atombus}{schema_class} = 'AtomBus::Schema';
-    # Automagically create db if it doesn't exist.
-    if (not $deployed++) {
-        eval { schema->deploy }; # Fails gracefully if tables already exist.
-    }
-};
+config->{plugins}{DBIC}{atombus} = config->{atombus}{db};
+config->{plugins}{DBIC}{atombus}{schema_class} = 'AtomBus::Schema';
+eval { schema->deploy }; # Fails gracefully if tables already exist.
 
 get '/feeds/:feed_title/entries/:entry_id' => sub {
     my $entry_id = 'urn:uuid:' . params->{entry_id};
