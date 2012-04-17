@@ -3,14 +3,17 @@ use Dancer qw(:syntax);
 use Dancer::Test;
 
 use Dancer::Plugin::DBIC qw(schema);
-use AtomBus;
 use Capture::Tiny qw(capture);
 
-set atombus => {
-    db => {
-        dsn => 'dbi:SQLite:dbname=:memory:',
-    }
-};
+BEGIN {
+    set atombus => {
+        db => {
+            dsn => 'dbi:SQLite:dbname=:memory:',
+        }
+    };
+}
+
+use AtomBus;
 
 my $xml1 = q{
     <entry>

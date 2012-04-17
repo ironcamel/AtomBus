@@ -5,14 +5,17 @@ use Dancer::Test;
 use URI;
 use XML::XPath;
 use Dancer::Plugin::DBIC qw(schema);
-use AtomBus;
 use Capture::Tiny qw(capture);
 
-set atombus => {
-    db => {
-        dsn => 'dbi:SQLite:dbname=:memory:',
-    }
-};
+BEGIN {
+    set atombus => {
+        db => {
+            dsn => 'dbi:SQLite:dbname=:memory:',
+        }
+    };
+}
+
+use AtomBus;
 
 my $xml = q{
     <entry>
