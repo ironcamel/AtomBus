@@ -1,5 +1,12 @@
 Revision history for AtomBus
 
+1.0405  2012-04-17
+        Fixed tests to set config options at compile time before AtomBus module
+        is loaded.
+        Removed unnecessary before hook. Initializing now happens when AtomBus
+            is loaded.
+        Fixed the structure of the config options in config.yml.
+
 1.0404  2010-12-29
         Making configuration more friendly. All AtomBus specific settings
             should now be under the 'atombus' config setting.
